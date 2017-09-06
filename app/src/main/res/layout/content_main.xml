@@ -90,6 +90,27 @@
             </LinearLayout>
         </HorizontalScrollView>
 
+        <LinearLayout
+            android:id="@+id/ll_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="@dimen/activity_horizontal_margin">
+            <SeekBar
+                android:id="@+id/seekbar_intensity"
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="wrap_content"
+                android:max="512"/>
+            <TextView
+                android:id="@+id/tv_value"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="0"/>
+        </LinearLayout>
+
         <Button
             android:id="@+id/btn_normalize"
             android:layout_width="match_parent"

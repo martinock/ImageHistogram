@@ -16,7 +16,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.BarChart;
@@ -31,7 +33,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final int COLOR_BOUNDARIES = 256;
-    private static final int INTENSITY_THRESHOLD = 50;
+    private int intensity = 1;
 
     private ImageView imageView;
     private ImageView grayImage;
@@ -39,6 +41,10 @@ public class MainActivity extends AppCompatActivity
     private ImageView equalizedImage;
     private TextView tvNormalizeTitle;
     private TextView tvEqualizeTitle;
+
+    private LinearLayout llSeekbar;
+    private SeekBar seekbarValue;
+    private TextView tvValue;
     private int[] redPixel = new int[COLOR_BOUNDARIES];
     private int[] greenPixel = new int[COLOR_BOUNDARIES];
     private int[] bluePixel = new int[COLOR_BOUNDARIES];
@@ -84,10 +90,34 @@ public class MainActivity extends AppCompatActivity
         grayChart = (BarChart) findViewById(R.id.gray_chart);
         tvTitle = (TextView) findViewById(R.id.first_title);
         normalizeButton = (Button) findViewById(R.id.btn_normalize);
+        llSeekbar = (LinearLayout) findViewById(R.id.ll_seekbar);
+        seekbarValue = (SeekBar) findViewById(R.id.seekbar_intensity);
+        tvValue = (TextView) findViewById(R.id.tv_value);
         setButtonAction();
+        setSeekbarListener();
         NavigationView navigationView = (NavigationView) findViewById(
                 R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    private void setSeekbarListener() {
+        seekbarValue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                intensity = progress;
+                tvValue.setText(String.valueOf(intensity));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     private void setButtonAction() {
@@ -161,6 +191,7 @@ public class MainActivity extends AppCompatActivity
         //count probability
         for (int i = 0; i < COLOR_BOUNDARIES; ++i) {
             probability[i] = (double)grayPixel[i] / (double)totalPixel;
+            cumulative[i] = 0;
         }
         //cumulative
         for (int i = 0; i < COLOR_BOUNDARIES; ++i) {
@@ -169,7 +200,7 @@ public class MainActivity extends AppCompatActivity
             }
         }
         for (int i = 0; i < COLOR_BOUNDARIES; ++i) {
-            cumulative[i] = Math.floor((cumulative[i] * INTENSITY_THRESHOLD) % 256);
+            cumulative[i] = Math.floor((cumulative[i] * intensity));
         }
         final Bitmap output = bd.getBitmap().copy(Bitmap.Config.RGB_565, true);
         for (int i = 0; i < height; ++i) {
@@ -276,10 +307,12 @@ public class MainActivity extends AppCompatActivity
         grayChart.setVisibility(View.GONE);
         tvTitle.setVisibility(View.GONE);
         normalizeButton.setVisibility(View.GONE);
+        llSeekbar.setVisibility(View.GONE);
     }
 
     private void showAllView() {
         imageView.setVisibility(View.VISIBLE);
+        llSeekbar.setVisibility(View.VISIBLE);
         redChart.setVisibility(View.VISIBLE);
         greenChart.setVisibility(View.VISIBLE);
         blueChart.setVisibility(View.VISIBLE);
