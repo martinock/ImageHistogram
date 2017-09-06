@@ -35,6 +35,24 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"/>
 
+        <Button
+            android:id="@+id/btn_normalize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:text="@string/normalize"
+            android:textColor="@android:color/white"
+            android:visibility="gone"/>
+
+        <ImageView
+            android:id="@+id/new_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="@dimen/activity_vertical_margin"/>
+
         <com.github.mikephil.charting.charts.BarChart
             android:id="@+id/red_chart"
             android:layout_width="match_parent"

@@ -1,10 +1,10 @@
 package com.martinock.imagehistogram;
 
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -30,18 +31,26 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final int COLOR_BOUNDARIES = 256;
+    private static final int INTENSITY_THRESHOLD = 50;
 
     private ImageView imageView;
+    private ImageView newImage;
     private int[] redPixel = new int[COLOR_BOUNDARIES];
     private int[] greenPixel = new int[COLOR_BOUNDARIES];
     private int[] bluePixel = new int[COLOR_BOUNDARIES];
     private int[] grayPixel = new int[COLOR_BOUNDARIES];
+
+    private double[] probability = new double[COLOR_BOUNDARIES];
+    private double[] cumulative = new double[COLOR_BOUNDARIES];
+
+    private Bitmap grayScaleBitmap;
 
     private BarChart redChart;
     private BarChart greenChart;
     private BarChart blueChart;
     private BarChart grayChart;
     private ProgressBar progressBar;
+    private Button normalizeButton;
     private TextView tvTitle;
 
     @Override
@@ -59,15 +68,83 @@ public class MainActivity extends AppCompatActivity
         toggle.syncState();
 
         imageView = (ImageView) findViewById(R.id.iv_photo);
+        newImage = (ImageView) findViewById(R.id.new_photo);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         redChart = (BarChart) findViewById(R.id.red_chart);
         greenChart = (BarChart) findViewById(R.id.green_chart);
         blueChart = (BarChart) findViewById(R.id.blue_chart);
         grayChart = (BarChart) findViewById(R.id.gray_chart);
         tvTitle = (TextView) findViewById(R.id.first_title);
+        normalizeButton = (Button) findViewById(R.id.btn_normalize);
+        setButtonAction();
         NavigationView navigationView = (NavigationView) findViewById(
                 R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    private void setButtonAction() {
+        normalizeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                makeGrayScaleImage();
+                showLoading();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        normalizeImage();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                hideLoading();
+                            }
+                        });
+                    }
+                }).start();
+            }
+        });
+    }
+
+    private void makeGrayScaleImage() {
+        imageView.setImageBitmap(grayScaleBitmap);
+    }
+
+    private void normalizeImage() {
+        BitmapDrawable bd = (BitmapDrawable) imageView.getDrawable();
+        int height = bd.getBitmap().getHeight();
+        int width = bd.getBitmap().getWidth();
+        int totalPixel = height * width;
+        //count probability
+        for (int i = 0; i < COLOR_BOUNDARIES; ++i) {
+            probability[i] = (double)grayPixel[i] / (double)totalPixel;
+        }
+        //cumulative
+        for (int i = 0; i < COLOR_BOUNDARIES; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                cumulative[i] = cumulative[i] + probability[j];
+            }
+        }
+        for (int i = 0; i < COLOR_BOUNDARIES; ++i) {
+            cumulative[i] = Math.floor((cumulative[i] * INTENSITY_THRESHOLD) % 256);
+        }
+        final Bitmap output = bd.getBitmap().copy(Bitmap.Config.RGB_565, true);
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                int pixel = bd.getBitmap().getPixel(j, i);
+                int intensity = Color.red(pixel);
+                int newPixel = Color.rgb(
+                        (int)cumulative[intensity],
+                        (int)cumulative[intensity],
+                        (int)cumulative[intensity]);
+                output.setPixel(j, i, newPixel);
+            }
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                newImage.setImageBitmap(output);
+                newImage.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     @Override
@@ -141,11 +218,13 @@ public class MainActivity extends AppCompatActivity
 
     private void hideAllView() {
         imageView.setVisibility(View.GONE);
+        newImage.setVisibility(View.GONE);
         redChart.setVisibility(View.GONE);
         greenChart.setVisibility(View.GONE);
         blueChart.setVisibility(View.GONE);
         grayChart.setVisibility(View.GONE);
         tvTitle.setVisibility(View.GONE);
+        normalizeButton.setVisibility(View.GONE);
     }
 
     private void showAllView() {
@@ -154,6 +233,7 @@ public class MainActivity extends AppCompatActivity
         greenChart.setVisibility(View.VISIBLE);
         blueChart.setVisibility(View.VISIBLE);
         grayChart.setVisibility(View.VISIBLE);
+        normalizeButton.setVisibility(View.VISIBLE);
     }
 
     private void changeImage(int newImageId) {
@@ -166,6 +246,7 @@ public class MainActivity extends AppCompatActivity
         BitmapDrawable bd = (BitmapDrawable) imageView.getDrawable();
         int height = bd.getBitmap().getHeight();
         int width = bd.getBitmap().getWidth();
+        grayScaleBitmap = bd.getBitmap().copy(Bitmap.Config.RGB_565, true);
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
                 int pixel = bd.getBitmap().getPixel(j, i);
@@ -177,6 +258,8 @@ public class MainActivity extends AppCompatActivity
                 greenPixel[green]++;
                 bluePixel[blue]++;
                 grayPixel[gray]++;
+                int newPixel = Color.rgb(gray, gray, gray);
+                grayScaleBitmap.setPixel(j, i, newPixel);
             }
         }
         visualizeHistogram();
