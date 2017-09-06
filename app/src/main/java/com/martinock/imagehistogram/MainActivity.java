@@ -34,7 +34,11 @@ public class MainActivity extends AppCompatActivity
     private static final int INTENSITY_THRESHOLD = 50;
 
     private ImageView imageView;
-    private ImageView newImage;
+    private ImageView grayImage;
+    private ImageView normalizedImage;
+    private ImageView equalizedImage;
+    private TextView tvNormalizeTitle;
+    private TextView tvEqualizeTitle;
     private int[] redPixel = new int[COLOR_BOUNDARIES];
     private int[] greenPixel = new int[COLOR_BOUNDARIES];
     private int[] bluePixel = new int[COLOR_BOUNDARIES];
@@ -68,7 +72,11 @@ public class MainActivity extends AppCompatActivity
         toggle.syncState();
 
         imageView = (ImageView) findViewById(R.id.iv_photo);
-        newImage = (ImageView) findViewById(R.id.new_photo);
+        grayImage = (ImageView) findViewById(R.id.gray_image);
+        normalizedImage = (ImageView) findViewById(R.id.normalize_photo);
+        equalizedImage = (ImageView) findViewById(R.id.new_photo);
+        tvNormalizeTitle = (TextView) findViewById(R.id.tv_normalize_title);
+        tvEqualizeTitle = (TextView) findViewById(R.id.tv_equalize_title);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         redChart = (BarChart) findViewById(R.id.red_chart);
         greenChart = (BarChart) findViewById(R.id.green_chart);
@@ -91,6 +99,7 @@ public class MainActivity extends AppCompatActivity
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        equalizeImage();
                         normalizeImage();
                         runOnUiThread(new Runnable() {
                             @Override
@@ -104,12 +113,48 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    private void makeGrayScaleImage() {
-        imageView.setImageBitmap(grayScaleBitmap);
-    }
-
     private void normalizeImage() {
         BitmapDrawable bd = (BitmapDrawable) imageView.getDrawable();
+        int height = bd.getBitmap().getHeight();
+        int width = bd.getBitmap().getWidth();
+        final Bitmap output = bd.getBitmap().copy(Bitmap.Config.RGB_565, true);
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                int pixel = bd.getBitmap().getPixel(j, i);
+                int red = Color.red(pixel);
+                int green = Color.green(pixel);
+                int blue = Color.blue(pixel);
+
+                double normalRed = ((double)red/(double)(red + green + blue))
+                        * 255;
+                double normalGreen = ((double)green/(double)(red + green + blue))
+                        * 255;
+                double normalBlue = ((double)blue/(double)(red + green + blue))
+                        * 255;
+
+                int newPixel = Color.rgb(
+                        (int)normalRed,
+                        (int)normalGreen,
+                        (int)normalBlue);
+                output.setPixel(j, i, newPixel);
+            }
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                normalizedImage.setImageBitmap(output);
+                normalizedImage.setVisibility(View.VISIBLE);
+                tvNormalizeTitle.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void makeGrayScaleImage() {
+        grayImage.setImageBitmap(grayScaleBitmap);
+    }
+
+    private void equalizeImage() {
+        BitmapDrawable bd = (BitmapDrawable) grayImage.getDrawable();
         int height = bd.getBitmap().getHeight();
         int width = bd.getBitmap().getWidth();
         int totalPixel = height * width;
@@ -141,8 +186,10 @@ public class MainActivity extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                newImage.setImageBitmap(output);
-                newImage.setVisibility(View.VISIBLE);
+                equalizedImage.setImageBitmap(output);
+                grayImage.setVisibility(View.VISIBLE);
+                equalizedImage.setVisibility(View.VISIBLE);
+                tvEqualizeTitle.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -218,7 +265,11 @@ public class MainActivity extends AppCompatActivity
 
     private void hideAllView() {
         imageView.setVisibility(View.GONE);
-        newImage.setVisibility(View.GONE);
+        grayImage.setVisibility(View.GONE);
+        equalizedImage.setVisibility(View.GONE);
+        normalizedImage.setVisibility(View.GONE);
+        tvNormalizeTitle.setVisibility(View.GONE);
+        tvEqualizeTitle.setVisibility(View.GONE);
         redChart.setVisibility(View.GONE);
         greenChart.setVisibility(View.GONE);
         blueChart.setVisibility(View.GONE);

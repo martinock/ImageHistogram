@@ -7,5 +7,7 @@
     <string name="action_settings">Settings</string>
 
     <string name="welcome_message">Welcome to ImageHistogram! Open the navigation drawer and see the RGB + gray histogram of a photo</string>
-    <string name="normalize">Normalize</string>
+    <string name="normalize_equalize">Normalize &amp; Equalize</string>
+    <string name="equalization_title">Equalization Result</string>
+    <string name="normalization_title">Normalization Result</string>
 </resources>
