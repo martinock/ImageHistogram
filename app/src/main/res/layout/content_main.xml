@@ -35,31 +35,96 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"/>
 
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/red_chart"
+        <LinearLayout
+            android:id="@+id/ll_seekbar"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:visibility="gone">
+            <SeekBar
+                android:id="@+id/seekbar_bw_threshold"
+                android:layout_width="0dp"
+                android:layout_weight="10"
+                android:layout_height="wrap_content"
+                android:max="256"/>
+            <TextView
+                android:id="@+id/tv_bw_threshold"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_object_count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:text="@string/object_count"
+                android:layout_marginTop="@dimen/activity_vertical_margin" />
+
+            <TextView
+                android:id="@+id/tv_object_count"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:text="0"
+                android:layout_marginTop="@dimen/activity_vertical_margin"
+                android:gravity="center_horizontal"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_object_count_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:text="@string/object_count_1"
+                android:layout_marginTop="@dimen/activity_vertical_margin" />
+
+            <TextView
+                android:id="@+id/tv_object_count_1"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:text="0"
+                android:layout_marginTop="@dimen/activity_vertical_margin"
+                android:gravity="center_horizontal"/>
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_convert_to_bw"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/convert_to_bw"
+            android:background="@color/colorPrimaryDark"
+            android:textColor="@android:color/white"
             android:layout_marginTop="@dimen/activity_vertical_margin"
             android:visibility="gone"/>
 
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/green_chart"
+        <Button
+            android:id="@+id/btn_count_object"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginTop="@dimen/activity_vertical_margin"
-            android:visibility="gone"/>
-
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/blue_chart"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginTop="@dimen/activity_vertical_margin"
-            android:visibility="gone"/>
-
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/gray_chart"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
+            android:text="@string/count_object"
+            android:background="@color/colorPrimaryDark"
+            android:textColor="@android:color/white"
             android:layout_marginTop="@dimen/activity_vertical_margin"
             android:visibility="gone"/>
     </LinearLayout>

@@ -5,51 +5,11 @@
         <item
             android:id="@+id/photo_1"
             android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 1"/>
+            android:title="Hitung 0 dan 1"/>
         <item
             android:id="@+id/photo_2"
             android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 2"/>
-        <item
-            android:id="@+id/photo_3"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 3"/>
-        <item
-            android:id="@+id/photo_4"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 4"/>
-        <item
-            android:id="@+id/photo_5"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 5"/>
-        <item
-            android:id="@+id/photo_6"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 6"/>
-        <item
-            android:id="@+id/photo_7"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 7"/>
-        <item
-            android:id="@+id/photo_8"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 8"/>
-        <item
-            android:id="@+id/photo_9"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 9"/>
-        <item
-            android:id="@+id/photo_10"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 10"/>
-        <item
-            android:id="@+id/photo_11"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 11"/>
-        <item
-            android:id="@+id/photo_12"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Foto 12"/>
+            android:title="Hitung Jumlah Objek"/>
     </group>
 
 </menu>
