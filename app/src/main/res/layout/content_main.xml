@@ -82,32 +82,6 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/ll_object_count_1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:text="@string/object_count_1"
-                android:layout_marginTop="@dimen/activity_vertical_margin" />
-
-            <TextView
-                android:id="@+id/tv_object_count_1"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:text="0"
-                android:layout_marginTop="@dimen/activity_vertical_margin"
-                android:gravity="center_horizontal"/>
-
-        </LinearLayout>
-
         <Button
             android:id="@+id/btn_convert_to_bw"
             android:layout_width="match_parent"

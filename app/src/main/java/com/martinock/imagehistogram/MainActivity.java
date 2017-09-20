@@ -21,9 +21,7 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 public class MainActivity extends AppCompatActivity
@@ -32,12 +30,9 @@ public class MainActivity extends AppCompatActivity
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
 
-    private List<Integer> zeroDirection = new ArrayList<>();
-    private List<Integer> oneDirection = new ArrayList<>();
-
     private int bwThreshold = 0;
+    private int componentCount = 0;
     private int objectCount = 0;
-    private boolean detectObject;
 
     private ImageView imageView;
     private Button convertButton;
@@ -47,9 +42,7 @@ public class MainActivity extends AppCompatActivity
     private Button countButton;
 
     private LinearLayout llObjectCount0;
-    private LinearLayout llObjectCount1;
     private TextView tvObjectCount0;
-    private TextView tvObjectCount1;
     private BitmapDrawable originalImageBitmap;
     private Bitmap blackAndWhiteBitmap;
 
@@ -78,9 +71,7 @@ public class MainActivity extends AppCompatActivity
         llSeekbar = (LinearLayout) findViewById(R.id.ll_seekbar);
         tvTitle = (TextView) findViewById(R.id.first_title);
         tvObjectCount0 = (TextView) findViewById(R.id.tv_object_count);
-        tvObjectCount1 = (TextView) findViewById(R.id.tv_object_count_1);
         llObjectCount0 = (LinearLayout) findViewById(R.id.ll_object_count);
-        llObjectCount1 = (LinearLayout) findViewById(R.id.ll_object_count_1);
         countButton = (Button) findViewById(R.id.btn_count_object);
         setSeekbarListener();
         setButtonListener();
@@ -116,7 +107,6 @@ public class MainActivity extends AppCompatActivity
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-//                        if (!detectObject) {
                             countObject();
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -127,29 +117,10 @@ public class MainActivity extends AppCompatActivity
                                     hideLoading();
                                 }
                             });
-//                        } else {
-//                            countZeroAndOne();
-//                        }
                     }
                 }).start();
             }
         });
-    }
-
-    private void countZeroAndOne() {
-        int heigth = blackAndWhiteBitmap.getHeight();
-        int width = blackAndWhiteBitmap.getWidth();
-        boolean[][] historyMatrix = new boolean[width][heigth];
-        for (int i = 0; i < heigth; ++i) {
-            for (int j = 0; j < width; ++j) {
-                int pixel = blackAndWhiteBitmap.getPixel(j, i);
-                if (pixel == BLACK_COLOR) {
-                    blackAndWhiteBitmap.setPixel(j, i, Color.rgb(255, 0, 0));
-                } else {
-                    historyMatrix[j][i] = true;
-                }
-            }
-        }
     }
 
     private void countObject() {
@@ -164,7 +135,9 @@ public class MainActivity extends AppCompatActivity
                 int red = Color.red(pixel);
                 if (red == 0) {
                     floodFill(j, i, BLACK_COLOR, WHITE_COLOR);
-                    objectCount++;
+                    if (componentCount >= 50) {
+                        objectCount++;
+                    }
                 }
             }
         }
@@ -177,6 +150,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void floodFill(int x, int y, int prevColor, int newColor) {
+        componentCount = 0;
         Queue<Integer> queueX = new LinkedList<Integer>();
         Queue<Integer> queueY = new LinkedList<Integer>();
         queueX.add(x);
@@ -189,9 +163,10 @@ public class MainActivity extends AppCompatActivity
             }
 
             int nextX = pointX + 1;
-            while ((pointX > 0) && (blackAndWhiteBitmap.getPixel(pointX, pointY)
+            while ((pointX >= 0) && (blackAndWhiteBitmap.getPixel(pointX, pointY)
                     == prevColor)) {
                 blackAndWhiteBitmap.setPixel(pointX, pointY, newColor);
+                componentCount++;
                 if ((pointY > 0)
                         && (blackAndWhiteBitmap.getPixel(pointX, pointY - 1)
                         == newColor)) {
@@ -210,6 +185,7 @@ public class MainActivity extends AppCompatActivity
                     && (blackAndWhiteBitmap.getPixel(nextX, pointY)
                     == prevColor)) {
                 blackAndWhiteBitmap.setPixel(nextX, pointY, newColor);
+                componentCount++;
 
                 if ((pointY > 0) && (blackAndWhiteBitmap.getPixel(
                         nextX, pointY - 1) == prevColor)) {
@@ -239,12 +215,12 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
+                //do nothing
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                //do nothing
             }
         });
     }
@@ -265,11 +241,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.photo_1) {
-            changeImage(R.drawable.photo_date);
-            detectObject = true;
-        } else {
             changeImage(R.drawable.photo_1);
-            detectObject = false;
         }
         tvTitle.setVisibility(View.GONE);
         objectCount = 0;
@@ -296,7 +268,6 @@ public class MainActivity extends AppCompatActivity
         convertButton.setVisibility(View.GONE);
         llSeekbar.setVisibility(View.GONE);
         llObjectCount0.setVisibility(View.GONE);
-        llObjectCount1.setVisibility(View.GONE);
         countButton.setVisibility(View.GONE);
     }
 

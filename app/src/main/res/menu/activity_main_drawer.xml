@@ -5,10 +5,6 @@
         <item
             android:id="@+id/photo_1"
             android:icon="@drawable/ic_menu_camera"
-            android:title="Hitung 0 dan 1"/>
-        <item
-            android:id="@+id/photo_2"
-            android:icon="@drawable/ic_menu_camera"
             android:title="Hitung Jumlah Objek"/>
     </group>
 
