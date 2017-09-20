@@ -21,7 +21,9 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public class MainActivity extends AppCompatActivity
@@ -30,8 +32,12 @@ public class MainActivity extends AppCompatActivity
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
 
+    private List<Integer> zeroDirection = new ArrayList<>();
+    private List<Integer> oneDirection = new ArrayList<>();
+
     private int bwThreshold = 0;
     private int objectCount = 0;
+    private boolean detectObject;
 
     private ImageView imageView;
     private Button convertButton;
@@ -110,23 +116,44 @@ public class MainActivity extends AppCompatActivity
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        countObject();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                tvObjectCount0.setText(
-                                        String.valueOf(objectCount));
-                                llObjectCount0.setVisibility(View.VISIBLE);
-                                hideLoading();
-                            }
-                        });
+//                        if (!detectObject) {
+                            countObject();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    tvObjectCount0.setText(
+                                            String.valueOf(objectCount));
+                                    llObjectCount0.setVisibility(View.VISIBLE);
+                                    hideLoading();
+                                }
+                            });
+//                        } else {
+//                            countZeroAndOne();
+//                        }
                     }
                 }).start();
             }
         });
     }
 
+    private void countZeroAndOne() {
+        int heigth = blackAndWhiteBitmap.getHeight();
+        int width = blackAndWhiteBitmap.getWidth();
+        boolean[][] historyMatrix = new boolean[width][heigth];
+        for (int i = 0; i < heigth; ++i) {
+            for (int j = 0; j < width; ++j) {
+                int pixel = blackAndWhiteBitmap.getPixel(j, i);
+                if (pixel == BLACK_COLOR) {
+                    blackAndWhiteBitmap.setPixel(j, i, Color.rgb(255, 0, 0));
+                } else {
+                    historyMatrix[j][i] = true;
+                }
+            }
+        }
+    }
+
     private void countObject() {
+        objectCount = 0;
         int height = blackAndWhiteBitmap.getHeight();
         int width = blackAndWhiteBitmap.getWidth();
         final Bitmap copyOfBW = blackAndWhiteBitmap.copy(
@@ -239,8 +266,10 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.photo_1) {
             changeImage(R.drawable.photo_date);
+            detectObject = true;
         } else {
             changeImage(R.drawable.photo_1);
+            detectObject = false;
         }
         tvTitle.setVisibility(View.GONE);
         objectCount = 0;
