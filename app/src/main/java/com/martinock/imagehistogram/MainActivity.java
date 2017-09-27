@@ -21,6 +21,7 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity
     private int bwThreshold = 0;
     private int componentCount = 0;
     private int objectCount = 0;
+    private ArrayList<ChainCode> objectCodes = new ArrayList<>();
 
     private ImageView imageView;
     private Button convertButton;
@@ -134,8 +136,11 @@ public class MainActivity extends AppCompatActivity
                 int pixel = blackAndWhiteBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 if (red == 0) {
+                    ChainCode codeObject = new ChainCode(j, i);
+                    traceBoundary(j, i, codeObject);
+                    objectCodes.add(codeObject);
                     floodFill(j, i, BLACK_COLOR, WHITE_COLOR);
-                    if (componentCount >= 50) {
+                    if (componentCount >= 100) {
                         objectCount++;
                     }
                 }
@@ -147,6 +152,45 @@ public class MainActivity extends AppCompatActivity
                 imageView.setImageBitmap(copyOfBW);
             }
         });
+    }
+
+    private void traceBoundary(int x, int y, ChainCode object) {
+        int startingPixel = blackAndWhiteBitmap.getPixel(x, y);
+        int dir = 7;
+        int currentPixel = blackAndWhiteBitmap.getPixel(x+1, y+1);
+        while (currentPixel != startingPixel) {
+            if (Color.red(currentPixel) != 0) {
+                dir = (dir + 1) % 8;
+            } else {
+                object.addCode(dir);
+            }
+
+            //change the direction initialization
+            if (dir % 2 == 0) {
+                dir = (dir + 7) % 8;
+            } else {
+                dir = (dir + 6) % 8;
+            }
+
+            switch (dir) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 6:
+                    break;
+                case 7:
+                    break;
+            }
+        }
     }
 
     private void floodFill(int x, int y, int prevColor, int newColor) {
