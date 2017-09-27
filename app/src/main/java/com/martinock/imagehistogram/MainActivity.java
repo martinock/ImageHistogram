@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity
                 int red = Color.red(pixel);
                 if (red == 0) {
                     ChainCode codeObject = new ChainCode(j, i);
-                    traceBoundary(j, i, codeObject);
+                    traceBoundary(j, i, codeObject, width, height);
                     objectCodes.add(codeObject);
                     floodFill(j, i, BLACK_COLOR, WHITE_COLOR);
                     if (componentCount >= 100) {
@@ -154,41 +154,106 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    private void traceBoundary(int x, int y, ChainCode object) {
-        int startingPixel = blackAndWhiteBitmap.getPixel(x, y);
+    private void traceBoundary(int x, int y, ChainCode object,
+                               int width, int height) {
         int dir = 7;
-        int currentPixel = blackAndWhiteBitmap.getPixel(x+1, y+1);
-        while (currentPixel != startingPixel) {
-            if (Color.red(currentPixel) != 0) {
-                dir = (dir + 1) % 8;
-            } else {
-                object.addCode(dir);
-            }
-
+        int currentX = x;
+        int currentY = y;
+        boolean isDone = false;
+        if (dir % 2 == 0) {
+            dir = (dir + 7) % 8;
+        } else {
+            dir = (dir + 6) % 8;
+        }
+        int firstDir = dir;
+        while (!isDone) {
             //change the direction initialization
-            if (dir % 2 == 0) {
-                dir = (dir + 7) % 8;
-            } else {
-                dir = (dir + 6) % 8;
-            }
-
+            int neighbourPixel = WHITE_COLOR;
+            int neighbourX = 0;
+            int neighbourY = 0;
             switch (dir) {
                 case 0:
+                    if (currentX != width - 1) {
+                        neighbourX = currentX + 1;
+                        neighbourY = currentY;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 1:
+                    if (currentX != width - 1 && currentY != 0) {
+                        neighbourX = currentX + 1;
+                        neighbourY = currentY - 1;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 2:
+                    if (currentY != 0) {
+                        neighbourX = currentX;
+                        neighbourY = currentY - 1;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 3:
+                    if (currentX != 0 && currentY != 0) {
+                        neighbourX = currentX - 1;
+                        neighbourY = currentY - 1;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 4:
+                    if (currentX != 0) {
+                        neighbourX = currentX - 1;
+                        neighbourY = currentY;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 5:
+                    if (currentX != 0 && currentY != height-1) {
+                        neighbourX = currentX - 1;
+                        neighbourY = currentY + 1;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 6:
+                    if (currentY != height-1) {
+                        neighbourX = currentX;
+                        neighbourY = currentY + 1;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
                 case 7:
+                    if (currentX != width - 1 && currentY != height-1) {
+                        neighbourX = currentX + 1;
+                        neighbourY = currentY + 1;
+                        neighbourPixel = blackAndWhiteBitmap.getPixel(
+                                neighbourX, neighbourY);
+                    }
                     break;
+            }
+            if (neighbourPixel == BLACK_COLOR) {
+                currentX = neighbourX;
+                currentY = neighbourY;
+                object.addCode(dir);
+                if (currentX == x && currentY == y) {
+                    isDone = true;
+                }
+                if (dir % 2 == 0) {
+                    dir = (dir + 7) % 8;
+                } else {
+                    dir = (dir + 6) % 8;
+                }
+            } else {
+                dir = (dir + 1) % 8;
+                if (dir == firstDir) {
+                    isDone = true;
+                }
             }
         }
     }
