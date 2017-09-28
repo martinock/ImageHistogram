@@ -25,11 +25,11 @@ public class ChainCode {
         return startY;
     }
 
-    public void addCode(int dir) {
-        code.add(dir);
+    public ArrayList<Integer> getCode() {
+        return code;
     }
 
-    public int getCodeSize() {
-        return code.size();
+    public void addCode(int dir) {
+        code.add(dir);
     }
 }

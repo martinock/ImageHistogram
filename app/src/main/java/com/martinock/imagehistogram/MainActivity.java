@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity
     private SeekBar thresholdSeekbar;
     private TextView tvSeekbar;
     private Button countButton;
+    private ImageView ivResult;
 
     private LinearLayout llObjectCount0;
     private TextView tvObjectCount0;
@@ -75,6 +76,7 @@ public class MainActivity extends AppCompatActivity
         tvObjectCount0 = (TextView) findViewById(R.id.tv_object_count);
         llObjectCount0 = (LinearLayout) findViewById(R.id.ll_object_count);
         countButton = (Button) findViewById(R.id.btn_count_object);
+        ivResult = (ImageView) findViewById(R.id.iv_result);
         setSeekbarListener();
         setButtonListener();
         NavigationView navigationView = (NavigationView) findViewById(
@@ -146,10 +148,61 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
+        drawResult();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 imageView.setImageBitmap(copyOfBW);
+            }
+        });
+    }
+
+    private void drawResult() {
+        final Bitmap result = Bitmap.createBitmap(
+                blackAndWhiteBitmap.getWidth(),
+                blackAndWhiteBitmap.getHeight(), Bitmap.Config.RGB_565);
+        for (ChainCode c : objectCodes) {
+            int currentX = c.getStartX();
+            int currentY = c.getStartY();
+            result.setPixel(currentX, currentY, BLACK_COLOR);
+            for (int dir : c.getCode()) {
+                switch (dir) {
+                    case 0:
+                        currentX = currentX + 1;
+                        break;
+                    case 1:
+                        currentX = currentX + 1;
+                        currentY = currentY - 1;
+                        break;
+                    case 2:
+                        currentY = currentY - 1;
+                        break;
+                    case 3:
+                        currentX = currentX - 1;
+                        currentY = currentY - 1;
+                        break;
+                    case 4:
+                        currentX = currentX - 1;
+                        break;
+                    case 5:
+                        currentX = currentX - 1;
+                        currentY = currentY + 1;
+                        break;
+                    case 6:
+                        currentY = currentY + 1;
+                        break;
+                    case 7:
+                        currentX = currentX + 1;
+                        currentY = currentY + 1;
+                        break;
+                }
+                result.setPixel(currentX, currentY, WHITE_COLOR);
+            }
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ivResult.setImageBitmap(result);
             }
         });
     }

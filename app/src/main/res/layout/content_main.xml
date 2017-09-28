@@ -101,5 +101,10 @@
             android:textColor="@android:color/white"
             android:layout_marginTop="@dimen/activity_vertical_margin"
             android:visibility="gone"/>
+
+        <ImageView
+            android:id="@+id/iv_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 </ScrollView>
