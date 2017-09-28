@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity
 
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
+    private static int RED_COLOR = Color.rgb(255, 0, 0);
 
     private int bwThreshold = 0;
     private int componentCount = 0;
@@ -164,7 +165,7 @@ public class MainActivity extends AppCompatActivity
         for (ChainCode c : objectCodes) {
             int currentX = c.getStartX();
             int currentY = c.getStartY();
-            result.setPixel(currentX, currentY, BLACK_COLOR);
+            result.setPixel(currentX, currentY, RED_COLOR);
             for (int dir : c.getCode()) {
                 switch (dir) {
                     case 0:
@@ -196,7 +197,7 @@ public class MainActivity extends AppCompatActivity
                         currentY = currentY + 1;
                         break;
                 }
-                result.setPixel(currentX, currentY, WHITE_COLOR);
+                result.setPixel(currentX, currentY, RED_COLOR);
             }
         }
         runOnUiThread(new Runnable() {
@@ -222,8 +223,8 @@ public class MainActivity extends AppCompatActivity
         while (!isDone) {
             //change the direction initialization
             int neighbourPixel = WHITE_COLOR;
-            int neighbourX = 0;
-            int neighbourY = 0;
+            int neighbourX = currentX;
+            int neighbourY = currentY;
             switch (dir) {
                 case 0:
                     if (currentX != width - 1) {
