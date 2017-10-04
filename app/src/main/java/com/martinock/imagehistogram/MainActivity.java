@@ -137,15 +137,10 @@ public class MainActivity extends AppCompatActivity
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
                 int pixel = blackAndWhiteBitmap.getPixel(j, i);
-                int red = Color.red(pixel);
-                if (red == 0) {
+                if (pixel == BLACK_COLOR) {
                     ChainCode codeObject = new ChainCode(j, i);
                     traceBoundary(j, i, codeObject, width, height);
                     objectCodes.add(codeObject);
-                    floodFill(j, i, BLACK_COLOR, WHITE_COLOR);
-                    if (componentCount >= 100) {
-                        objectCount++;
-                    }
                 }
             }
         }
@@ -297,12 +292,17 @@ public class MainActivity extends AppCompatActivity
                 object.addCode(dir);
                 if (currentX == x && currentY == y) {
                     isDone = true;
+                    floodFill(x, y, BLACK_COLOR, WHITE_COLOR);
+                    if (componentCount >= 40) {
+                        objectCount++;
+                    }
                 }
                 if (dir % 2 == 0) {
                     dir = (dir + 7) % 8;
                 } else {
                     dir = (dir + 6) % 8;
                 }
+                firstDir = dir;
             } else {
                 dir = (dir + 1) % 8;
                 if (dir == firstDir) {
@@ -318,7 +318,7 @@ public class MainActivity extends AppCompatActivity
         Queue<Integer> queueY = new LinkedList<Integer>();
         queueX.add(x);
         queueY.add(y);
-        while (queueX.size() > 0) {
+        while (queueX.size() > 0 && queueY.size() > 0) {
             int pointX = queueX.poll();
             int pointY = queueY.poll();
             if (blackAndWhiteBitmap.getPixel(pointX, pointY) != prevColor) {
