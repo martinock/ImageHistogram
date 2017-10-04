@@ -112,15 +112,16 @@ public class MainActivity extends AppCompatActivity
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                            countObject();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    tvObjectCount0.setText(
-                                            String.valueOf(objectCount));
-                                    llObjectCount0.setVisibility(View.VISIBLE);
-                                    hideLoading();
-                                }
+                        countObject();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                tvObjectCount0.setText(
+                                        String.valueOf(objectCount));
+                                llObjectCount0.setVisibility(View.VISIBLE);
+                                ivResult.setVisibility(View.VISIBLE);
+                                hideLoading();
+                            }
                             });
                     }
                 }).start();
@@ -154,13 +155,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void drawResult() {
-        final Bitmap result = Bitmap.createBitmap(
-                blackAndWhiteBitmap.getWidth(),
-                blackAndWhiteBitmap.getHeight(), Bitmap.Config.RGB_565);
+        int width = originalImageBitmap.getBitmap().getWidth();
+        int height = originalImageBitmap.getBitmap().getHeight();
+        final Bitmap resultBitmap = Bitmap.createBitmap(width, height,
+                Bitmap.Config.RGB_565);
         for (ChainCode c : objectCodes) {
             int currentX = c.getStartX();
             int currentY = c.getStartY();
-            result.setPixel(currentX, currentY, RED_COLOR);
+            resultBitmap.setPixel(currentX, currentY, RED_COLOR);
             for (int dir : c.getCode()) {
                 switch (dir) {
                     case 0:
@@ -192,13 +194,13 @@ public class MainActivity extends AppCompatActivity
                         currentY = currentY + 1;
                         break;
                 }
-                result.setPixel(currentX, currentY, RED_COLOR);
+                resultBitmap.setPixel(currentX, currentY, RED_COLOR);
             }
         }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ivResult.setImageBitmap(result);
+                ivResult.setImageBitmap(resultBitmap);
             }
         });
     }
@@ -405,6 +407,28 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.photo_1) {
             changeImage(R.drawable.photo_1);
+        } else if (id == R.id.photo_2) {
+            changeImage(R.drawable.photo_2);
+        } else if (id == R.id.photo_3) {
+            changeImage(R.drawable.photo_3);
+        } else if (id == R.id.photo_4) {
+            changeImage(R.drawable.photo_4);
+        } else if (id == R.id.photo_5) {
+            changeImage(R.drawable.photo_5);
+        } else if (id == R.id.photo_6) {
+            changeImage(R.drawable.photo_6);
+        } else if (id == R.id.photo_7) {
+            changeImage(R.drawable.photo_7);
+        } else if (id == R.id.photo_8) {
+            changeImage(R.drawable.photo_8);
+        } else if (id == R.id.photo_9) {
+            changeImage(R.drawable.photo_9);
+        } else if (id == R.id.photo_10) {
+            changeImage(R.drawable.photo_10);
+        } else if (id == R.id.photo_11) {
+            changeImage(R.drawable.photo_11);
+        } else if (id == R.id.photo_12) {
+            changeImage(R.drawable.photo_12);
         }
         tvTitle.setVisibility(View.GONE);
         objectCount = 0;
@@ -448,6 +472,10 @@ public class MainActivity extends AppCompatActivity
                 getResources(), newImageId, null);
         imageView.setImageDrawable(newImage);
         originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
+        ivResult.setImageDrawable(null);
+        ivResult.setImageBitmap(null);
+        ivResult.setImageResource(0);
+        objectCodes.clear();
     }
 
     private void convertToBW() {
