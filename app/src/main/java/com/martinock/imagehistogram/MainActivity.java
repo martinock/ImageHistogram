@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
     private static int RED_COLOR = Color.rgb(255, 0, 0);
 
-    private int bwThreshold = 0;
+    private int bwThreshold;
     private int componentCount = 0;
     private int objectCount = 0;
     private ArrayList<ChainCode> objectCodes = new ArrayList<>();
@@ -47,6 +47,8 @@ public class MainActivity extends AppCompatActivity
     private BitmapDrawable originalImageBitmap;
     private Bitmap grayscaleBitmap;
     private Bitmap blackAndWhiteBitmap;
+
+    private ProgressBar progressBarBw;
 
     private ProgressBar progressBar;
     private TextView tvTitle;
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity
         imageViewGray = (ImageView) findViewById(R.id.iv_photo_gray);
         imageViewBW = (ImageView) findViewById(R.id.iv_photo_bw);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+        progressBarBw = (ProgressBar) findViewById(R.id.progress_bar_bw);
         tvTitle = (TextView) findViewById(R.id.first_title);
         tvObjectCount0 = (TextView) findViewById(R.id.tv_object_count);
         llObjectCount0 = (LinearLayout) findViewById(R.id.ll_object_count);
@@ -182,6 +185,214 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.photo_1) {
+            changeImage(R.drawable.photo_1);
+        } else if (id == R.id.photo_2) {
+            changeImage(R.drawable.photo_2);
+        } else if (id == R.id.photo_3) {
+            changeImage(R.drawable.photo_3);
+        } else if (id == R.id.photo_4) {
+            changeImage(R.drawable.photo_4);
+        } else if (id == R.id.photo_5) {
+            changeImage(R.drawable.photo_5);
+        } else if (id == R.id.photo_6) {
+            changeImage(R.drawable.photo_6);
+        } else if (id == R.id.photo_7) {
+            changeImage(R.drawable.photo_7);
+        } else if (id == R.id.photo_8) {
+            changeImage(R.drawable.photo_8);
+        } else if (id == R.id.photo_9) {
+            changeImage(R.drawable.photo_9);
+        } else if (id == R.id.photo_10) {
+            changeImage(R.drawable.photo_10);
+        } else if (id == R.id.photo_11) {
+            changeImage(R.drawable.photo_11);
+        } else if (id == R.id.photo_12) {
+            changeImage(R.drawable.photo_12);
+        }
+        tvTitle.setVisibility(View.GONE);
+        objectCount = 0;
+        showAllView();
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    private void hideLoading() {
+        progressBar.setVisibility(View.GONE);
+        showAllView();
+    }
+
+    private void showLoading() {
+        hideAllView();
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void hideAllView() {
+        imageView.setVisibility(View.GONE);
+        imageViewGray.setVisibility(View.GONE);
+        imageViewBW.setVisibility(View.GONE);
+        tvTitle.setVisibility(View.GONE);
+        llObjectCount0.setVisibility(View.GONE);
+        countButton.setVisibility(View.GONE);
+    }
+
+    private void showAllView() {
+        imageView.setVisibility(View.VISIBLE);
+        imageViewGray.setVisibility(View.VISIBLE);
+        imageViewBW.setVisibility(View.VISIBLE);
+    }
+
+    private void changeImage(int newImageId) {
+        Drawable newImage = ResourcesCompat.getDrawable(
+                getResources(), newImageId, null);
+        imageView.setImageDrawable(newImage);
+        originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
+        initGrayImage();
+        progressBarBw.setVisibility(View.VISIBLE);
+        otsuThresholding();
+        imageViewBW.setVisibility(View.VISIBLE);
+        progressBarBw.setVisibility(View.GONE);
+        ivResult.setImageDrawable(null);
+        ivResult.setImageBitmap(null);
+        ivResult.setImageResource(0);
+        objectCodes.clear();
+    }
+
+    /**
+     * Search threshold value using otsu thresholding method.
+     */
+    private void otsuThresholding() {
+        int width = originalImageBitmap.getBitmap().getWidth();
+        int height = originalImageBitmap.getBitmap().getHeight();
+        int pixelCount = width * height;
+
+        //Calculate sum of pixel value
+        float sum = 0;
+        for (int i = 0; i < 256; i++) {
+            sum = sum + (float)(i * grayHistogram[i]);
+        }
+
+        float sumBackground = 0;
+        int weightBackground = 0;
+        int weightForeground;
+
+        float maxVariance = 0;
+        bwThreshold = 0;
+
+        for (int i = 0; i < 256; i++) {
+            //Make sure the first sum of element is not zero
+            weightBackground = weightBackground + grayHistogram[i];
+            if (weightBackground == 0) {
+                continue;
+            }
+
+            //Make sure that the next element is not zero
+            weightForeground = pixelCount - weightBackground;
+            if (weightForeground == 0) {
+                break;
+            }
+
+            sumBackground = sumBackground + (float) (i * grayHistogram[i]);
+
+            float meanBackground = sumBackground / weightBackground;
+            float meanForeground = (sum - sumBackground) / weightForeground;
+
+            //Calculate Between Class Variance
+            float betweenVariance = (float)weightBackground
+                    * (float)weightForeground
+                    * (meanBackground - meanForeground)
+                    * (meanBackground - meanForeground);
+
+            //The max value is the threshold we search
+            if (betweenVariance > maxVariance) {
+                maxVariance = betweenVariance;
+                bwThreshold = i;
+            }
+        }
+        convertToBW();
+    }
+
+    private void convertToBW() {
+        int height = originalImageBitmap.getBitmap().getHeight();
+        int width = originalImageBitmap.getBitmap().getWidth();
+        blackAndWhiteBitmap = Bitmap.createBitmap(
+                width, height, Bitmap.Config.RGB_565);
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
+                int red = Color.red(pixel);
+                int green = Color.green(pixel);
+                int blue = Color.blue(pixel);
+                int gray = ((red + green + blue) / 3) % 256;
+                if (gray < bwThreshold) {
+                    blackAndWhiteBitmap.setPixel(j, i, BLACK_COLOR);
+                } else {
+                    blackAndWhiteBitmap.setPixel(j, i, WHITE_COLOR);
+                }
+            }
+        }
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                imageViewBW.setImageBitmap(blackAndWhiteBitmap);
+            }
+        });
+    }
+
+    /**
+     * Draw a grayscale image into a bitmap and set it to ImageView.
+     */
+    private void initGrayImage() {
+        int height = originalImageBitmap.getBitmap().getHeight();
+        int width = originalImageBitmap.getBitmap().getWidth();
+        grayscaleBitmap = Bitmap.createBitmap(width, height,
+                Bitmap.Config.RGB_565);
+
+        for (int i = 0; i < grayHistogram.length; i++) {
+            grayHistogram[i] = 0;
+        }
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
+                int red = Color.red(pixel);
+                int green = Color.green(pixel);
+                int blue = Color.blue(pixel);
+                int gray = ((red + green + blue) / 3);
+                grayHistogram[gray]++;
+                int grayColor = Color.rgb(gray, gray, gray);
+                grayscaleBitmap.setPixel(j, i, grayColor);
+            }
+        }
+        imageViewGray.setImageBitmap(grayscaleBitmap);
+    }
+
+    /**
+     * Algorithm to get chaincode from an object.
+     * @param x starting point
+     * @param y starting point
+     * @param object chaincode object to store the direction list
+     * @param width image width
+     * @param height image height
+     */
     private void traceBoundary(int x, int y, ChainCode object,
                                int width, int height) {
         int dir = 7;
@@ -291,6 +502,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Flood fill algorithm without recursive.
+     * @param x starting point
+     * @param y starting point
+     * @param prevColor color to change
+     * @param newColor color written
+     */
     private void floodFill(int x, int y, int prevColor, int newColor) {
         componentCount = 0;
         Queue<Integer> queueX = new LinkedList<Integer>();
@@ -343,135 +561,5 @@ public class MainActivity extends AppCompatActivity
                 nextX++;
             }
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.photo_1) {
-            changeImage(R.drawable.photo_1);
-        } else if (id == R.id.photo_2) {
-            changeImage(R.drawable.photo_2);
-        } else if (id == R.id.photo_3) {
-            changeImage(R.drawable.photo_3);
-        } else if (id == R.id.photo_4) {
-            changeImage(R.drawable.photo_4);
-        } else if (id == R.id.photo_5) {
-            changeImage(R.drawable.photo_5);
-        } else if (id == R.id.photo_6) {
-            changeImage(R.drawable.photo_6);
-        } else if (id == R.id.photo_7) {
-            changeImage(R.drawable.photo_7);
-        } else if (id == R.id.photo_8) {
-            changeImage(R.drawable.photo_8);
-        } else if (id == R.id.photo_9) {
-            changeImage(R.drawable.photo_9);
-        } else if (id == R.id.photo_10) {
-            changeImage(R.drawable.photo_10);
-        } else if (id == R.id.photo_11) {
-            changeImage(R.drawable.photo_11);
-        } else if (id == R.id.photo_12) {
-            changeImage(R.drawable.photo_12);
-        }
-        tvTitle.setVisibility(View.GONE);
-        objectCount = 0;
-        showAllView();
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    private void hideLoading() {
-        progressBar.setVisibility(View.GONE);
-        showAllView();
-    }
-
-    private void showLoading() {
-        hideAllView();
-        progressBar.setVisibility(View.VISIBLE);
-    }
-
-    private void hideAllView() {
-        imageView.setVisibility(View.GONE);
-        imageViewGray.setVisibility(View.GONE);
-        imageViewBW.setVisibility(View.GONE);
-        tvTitle.setVisibility(View.GONE);
-        llObjectCount0.setVisibility(View.GONE);
-        countButton.setVisibility(View.GONE);
-    }
-
-    private void showAllView() {
-        imageView.setVisibility(View.VISIBLE);
-        imageViewGray.setVisibility(View.VISIBLE);
-        imageViewBW.setVisibility(View.VISIBLE);
-    }
-
-    private void changeImage(int newImageId) {
-        Drawable newImage = ResourcesCompat.getDrawable(
-                getResources(), newImageId, null);
-        imageView.setImageDrawable(newImage);
-        originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
-        initGrayImage();
-        ivResult.setImageDrawable(null);
-        ivResult.setImageBitmap(null);
-        ivResult.setImageResource(0);
-        objectCodes.clear();
-    }
-
-    private void initGrayImage() {
-        int height = originalImageBitmap.getBitmap().getHeight();
-        int width = originalImageBitmap.getBitmap().getWidth();
-        grayscaleBitmap = Bitmap.createBitmap(width, height,
-                Bitmap.Config.RGB_565);
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
-                int red = Color.red(pixel);
-                int green = Color.green(pixel);
-                int blue = Color.blue(pixel);
-                int gray = ((red + green + blue) / 3);
-                grayHistogram[gray]++;
-                int grayColor = Color.rgb(gray, gray, gray);
-                grayscaleBitmap.setPixel(j, i, grayColor);
-            }
-        }
-        imageViewGray.setImageBitmap(grayscaleBitmap);
-    }
-
-    //TODO: implement this with otsu thresholding
-    private void convertToBW() {
-        int height = originalImageBitmap.getBitmap().getHeight();
-        int width = originalImageBitmap.getBitmap().getWidth();
-        blackAndWhiteBitmap = Bitmap.createBitmap(
-                width, height, Bitmap.Config.RGB_565);
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
-                int red = Color.red(pixel);
-                int green = Color.green(pixel);
-                int blue = Color.blue(pixel);
-                int gray = ((red + green + blue) / 3) % 256;
-                if (gray < bwThreshold) {
-                    blackAndWhiteBitmap.setPixel(j, i, BLACK_COLOR);
-                } else {
-                    blackAndWhiteBitmap.setPixel(j, i, WHITE_COLOR);
-                }
-            }
-        }
-
-        imageViewBW.setImageBitmap(blackAndWhiteBitmap);
     }
 }
