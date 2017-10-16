@@ -18,7 +18,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -38,20 +37,20 @@ public class MainActivity extends AppCompatActivity
     private ArrayList<ChainCode> objectCodes = new ArrayList<>();
 
     private ImageView imageView;
-    private Button convertButton;
-    private LinearLayout llSeekbar;
-    private SeekBar thresholdSeekbar;
-    private TextView tvSeekbar;
+    private ImageView imageViewGray;
+    private ImageView imageViewBW;
     private Button countButton;
     private ImageView ivResult;
 
     private LinearLayout llObjectCount0;
     private TextView tvObjectCount0;
     private BitmapDrawable originalImageBitmap;
+    private Bitmap grayscaleBitmap;
     private Bitmap blackAndWhiteBitmap;
 
     private ProgressBar progressBar;
     private TextView tvTitle;
+    private int[] grayHistogram = new int[256];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,17 +67,14 @@ public class MainActivity extends AppCompatActivity
         toggle.syncState();
 
         imageView = (ImageView) findViewById(R.id.iv_photo);
+        imageViewGray = (ImageView) findViewById(R.id.iv_photo_gray);
+        imageViewBW = (ImageView) findViewById(R.id.iv_photo_bw);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        convertButton = (Button) findViewById(R.id.btn_convert_to_bw);
-        thresholdSeekbar = (SeekBar) findViewById(R.id.seekbar_bw_threshold);
-        tvSeekbar = (TextView) findViewById(R.id.tv_bw_threshold);
-        llSeekbar = (LinearLayout) findViewById(R.id.ll_seekbar);
         tvTitle = (TextView) findViewById(R.id.first_title);
         tvObjectCount0 = (TextView) findViewById(R.id.tv_object_count);
         llObjectCount0 = (LinearLayout) findViewById(R.id.ll_object_count);
         countButton = (Button) findViewById(R.id.btn_count_object);
         ivResult = (ImageView) findViewById(R.id.iv_result);
-        setSeekbarListener();
         setButtonListener();
         NavigationView navigationView = (NavigationView) findViewById(
                 R.id.nav_view);
@@ -86,25 +82,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setButtonListener() {
-        convertButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showLoading();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        convertToBW();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                hideLoading();
-                                countButton.setVisibility(View.VISIBLE);
-                            }
-                        });
-                    }
-                }).start();
-            }
-        });
         countButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -368,28 +345,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void setSeekbarListener() {
-        thresholdSeekbar.setOnSeekBarChangeListener(
-                new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(
-                    SeekBar seekBar, int progress, boolean fromUser) {
-                bwThreshold = progress;
-                tvSeekbar.setText(String.valueOf(bwThreshold));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                //do nothing
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                //do nothing
-            }
-        });
-    }
-
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -451,20 +406,17 @@ public class MainActivity extends AppCompatActivity
 
     private void hideAllView() {
         imageView.setVisibility(View.GONE);
+        imageViewGray.setVisibility(View.GONE);
+        imageViewBW.setVisibility(View.GONE);
         tvTitle.setVisibility(View.GONE);
-        convertButton.setVisibility(View.GONE);
-        llSeekbar.setVisibility(View.GONE);
         llObjectCount0.setVisibility(View.GONE);
         countButton.setVisibility(View.GONE);
     }
 
     private void showAllView() {
         imageView.setVisibility(View.VISIBLE);
-        convertButton.setVisibility(View.VISIBLE);
-        llSeekbar.setVisibility(View.VISIBLE);
-        convertButton.setVisibility(View.VISIBLE);
-        thresholdSeekbar.setVisibility(View.VISIBLE);
-        tvSeekbar.setVisibility(View.VISIBLE);
+        imageViewGray.setVisibility(View.VISIBLE);
+        imageViewBW.setVisibility(View.VISIBLE);
     }
 
     private void changeImage(int newImageId) {
@@ -472,12 +424,34 @@ public class MainActivity extends AppCompatActivity
                 getResources(), newImageId, null);
         imageView.setImageDrawable(newImage);
         originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
+        initGrayImage();
         ivResult.setImageDrawable(null);
         ivResult.setImageBitmap(null);
         ivResult.setImageResource(0);
         objectCodes.clear();
     }
 
+    private void initGrayImage() {
+        int height = originalImageBitmap.getBitmap().getHeight();
+        int width = originalImageBitmap.getBitmap().getWidth();
+        grayscaleBitmap = Bitmap.createBitmap(width, height,
+                Bitmap.Config.RGB_565);
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
+                int red = Color.red(pixel);
+                int green = Color.green(pixel);
+                int blue = Color.blue(pixel);
+                int gray = ((red + green + blue) / 3);
+                grayHistogram[gray]++;
+                int grayColor = Color.rgb(gray, gray, gray);
+                grayscaleBitmap.setPixel(j, i, grayColor);
+            }
+        }
+        imageViewGray.setImageBitmap(grayscaleBitmap);
+    }
+
+    //TODO: implement this with otsu thresholding
     private void convertToBW() {
         int height = originalImageBitmap.getBitmap().getHeight();
         int width = originalImageBitmap.getBitmap().getWidth();
@@ -498,6 +472,6 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
-        imageView.setImageBitmap(blackAndWhiteBitmap);
+        imageViewBW.setImageBitmap(blackAndWhiteBitmap);
     }
 }
