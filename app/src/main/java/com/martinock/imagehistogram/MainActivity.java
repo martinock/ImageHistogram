@@ -1,5 +1,6 @@
 package com.martinock.imagehistogram;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -12,6 +13,8 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +29,7 @@ import java.util.Queue;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+    private static int CAMERA_PIC_REQUEST = 1;
 
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
@@ -88,6 +92,40 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_camera:
+                //Open Camera
+                Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(intent, CAMERA_PIC_REQUEST);
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.activity_photo_bar, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == CAMERA_PIC_REQUEST) {
+            if (data == null) {
+                return;
+            }
+            tvTitle.setVisibility(View.GONE);
+            Bitmap capturedImageBitmap = (Bitmap) data.getExtras().get("data");
+            imageView.setImageBitmap(capturedImageBitmap);
+            imageView.setVisibility(View.VISIBLE);
+            originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
+            processImage();
+        }
+    }
+
     private void setButtonListener() {
         countButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -133,7 +171,7 @@ public class MainActivity extends AppCompatActivity
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                imageView.setImageBitmap(copyOfBW);
+                imageViewBW.setImageBitmap(copyOfBW);
             }
         });
     }
@@ -252,6 +290,7 @@ public class MainActivity extends AppCompatActivity
         imageView.setVisibility(View.GONE);
         imageViewGray.setVisibility(View.GONE);
         imageViewBW.setVisibility(View.GONE);
+        imageViewGrayProcessed.setVisibility(View.GONE);
         tvTitle.setVisibility(View.GONE);
         llObjectCount0.setVisibility(View.GONE);
         countButton.setVisibility(View.GONE);
@@ -261,6 +300,8 @@ public class MainActivity extends AppCompatActivity
         imageView.setVisibility(View.VISIBLE);
         imageViewGray.setVisibility(View.VISIBLE);
         imageViewBW.setVisibility(View.VISIBLE);
+        imageViewGrayProcessed.setVisibility(View.VISIBLE);
+        countButton.setVisibility(View.VISIBLE);
     }
 
     private void changeImage(int newImageId) {
@@ -268,6 +309,10 @@ public class MainActivity extends AppCompatActivity
                 getResources(), newImageId, null);
         imageView.setImageDrawable(newImage);
         originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
+        processImage();
+    }
+
+    private void processImage() {
         initGrayImage();
         progressBarBw.setVisibility(View.VISIBLE);
         otsuThresholding();
@@ -300,7 +345,7 @@ public class MainActivity extends AppCompatActivity
         float maxVariance = 0;
         bwThreshold = 0;
 
-        for (int i = 0; i < 80; i++) {
+        for (int i = 0; i < 40; i++) {
             //Make sure the first sum of element is not zero
             weightBackground = weightBackground + grayHistogram[i];
             if (weightBackground == 0) {
@@ -334,13 +379,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void convertToBW() {
-        int height = grayscaleBitmap.getHeight();
-        int width = grayscaleBitmap.getWidth();
+        int height = newGrayscaleBitmap.getHeight();
+        int width = newGrayscaleBitmap.getWidth();
         blackAndWhiteBitmap = Bitmap.createBitmap(
                 width, height, Bitmap.Config.RGB_565);
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                int pixel = grayscaleBitmap.getPixel(j, i);
+                int pixel = newGrayscaleBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 int green = Color.green(pixel);
                 int blue = Color.blue(pixel);
