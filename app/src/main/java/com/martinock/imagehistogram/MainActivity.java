@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
     private static int RED_COLOR = Color.rgb(255, 0, 0);
+    private static int GREEN_COLOR = Color.rgb(0, 255, 0);
     private static int EQUALIZATION_CONSTANT = 255;
 
     private int bwThreshold;
@@ -60,6 +61,8 @@ public class MainActivity extends AppCompatActivity
     private ProgressBar progressBar;
     private TextView tvTitle;
     private int[] grayHistogram = new int[256];
+
+    private int maxX, maxY, minX, minY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -185,6 +188,7 @@ public class MainActivity extends AppCompatActivity
             int currentX = c.getStartX();
             int currentY = c.getStartY();
             resultBitmap.setPixel(currentX, currentY, RED_COLOR);
+            resultBitmap.setPixel(c.getCentroidX(), c.getCentroidY(), GREEN_COLOR);
             for (int dir : c.getCode()) {
                 switch (dir) {
                     case 0:
@@ -237,7 +241,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -568,6 +571,8 @@ public class MainActivity extends AppCompatActivity
                 if (currentX == x && currentY == y) {
                     isDone = true;
                     floodFill(x, y, BLACK_COLOR, WHITE_COLOR);
+                    object.setCentroidX((maxX + minX)/2);
+                    object.setCentroidY((maxY + minY)/2);
                     if (componentCount >= 40) {
                         objectCount++;
                     }
@@ -595,9 +600,13 @@ public class MainActivity extends AppCompatActivity
      * @param newColor color written
      */
     private void floodFill(int x, int y, int prevColor, int newColor) {
+        maxX = x;
+        maxY = y;
+        minX = x;
+        minY = y;
         componentCount = 0;
-        Queue<Integer> queueX = new LinkedList<Integer>();
-        Queue<Integer> queueY = new LinkedList<Integer>();
+        Queue<Integer> queueX = new LinkedList<>();
+        Queue<Integer> queueY = new LinkedList<>();
         queueX.add(x);
         queueY.add(y);
         while (queueX.size() > 0 && queueY.size() > 0) {
@@ -610,6 +619,15 @@ public class MainActivity extends AppCompatActivity
             int nextX = pointX + 1;
             while ((pointX >= 0) && (blackAndWhiteBitmap.getPixel(pointX, pointY)
                     == prevColor)) {
+                if (pointX < minX) {
+                    minX = pointX;
+                }
+                if (pointY > maxY) {
+                    maxY = pointY;
+                }
+                if (pointY < minY) {
+                    minY = pointY;
+                }
                 blackAndWhiteBitmap.setPixel(pointX, pointY, newColor);
                 componentCount++;
                 if ((pointY > 0)
@@ -629,6 +647,15 @@ public class MainActivity extends AppCompatActivity
             while ((nextX < blackAndWhiteBitmap.getWidth() - 1)
                     && (blackAndWhiteBitmap.getPixel(nextX, pointY)
                     == prevColor)) {
+                if (pointX > maxX) {
+                    maxX = pointX;
+                }
+                if (pointY > maxY) {
+                    maxY = pointY;
+                }
+                if (pointY < minY) {
+                    minY = pointY;
+                }
                 blackAndWhiteBitmap.setPixel(nextX, pointY, newColor);
                 componentCount++;
 
