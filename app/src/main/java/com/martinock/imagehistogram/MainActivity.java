@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
     private static int RED_COLOR = Color.rgb(255, 0, 0);
+    private static int EQUALIZATION_CONSTANT = 255;
 
     private int bwThreshold;
     private int componentCount = 0;
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity
     private ImageView imageView;
     private ImageView imageViewGray;
     private ImageView imageViewBW;
+    private ImageView imageViewGrayProcessed;
     private Button countButton;
     private ImageView ivResult;
 
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity
     private BitmapDrawable originalImageBitmap;
     private Bitmap grayscaleBitmap;
     private Bitmap blackAndWhiteBitmap;
+    private Bitmap newGrayscaleBitmap;
 
     private ProgressBar progressBarBw;
 
@@ -71,6 +74,7 @@ public class MainActivity extends AppCompatActivity
         imageView = (ImageView) findViewById(R.id.iv_photo);
         imageViewGray = (ImageView) findViewById(R.id.iv_photo_gray);
         imageViewBW = (ImageView) findViewById(R.id.iv_photo_bw);
+        imageViewGrayProcessed = (ImageView) findViewById(R.id.iv_photo_gray_processed);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         progressBarBw = (ProgressBar) findViewById(R.id.progress_bar_bw);
         tvTitle = (TextView) findViewById(R.id.first_title);
@@ -296,7 +300,7 @@ public class MainActivity extends AppCompatActivity
         float maxVariance = 0;
         bwThreshold = 0;
 
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < 80; i++) {
             //Make sure the first sum of element is not zero
             weightBackground = weightBackground + grayHistogram[i];
             if (weightBackground == 0) {
@@ -330,17 +334,17 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void convertToBW() {
-        int height = originalImageBitmap.getBitmap().getHeight();
-        int width = originalImageBitmap.getBitmap().getWidth();
+        int height = grayscaleBitmap.getHeight();
+        int width = grayscaleBitmap.getWidth();
         blackAndWhiteBitmap = Bitmap.createBitmap(
                 width, height, Bitmap.Config.RGB_565);
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
+                int pixel = grayscaleBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 int green = Color.green(pixel);
                 int blue = Color.blue(pixel);
-                int gray = ((red + green + blue) / 3) % 256;
+                int gray = ((red + green + blue) / 3);
                 if (gray < bwThreshold) {
                     blackAndWhiteBitmap.setPixel(j, i, BLACK_COLOR);
                 } else {
@@ -383,6 +387,42 @@ public class MainActivity extends AppCompatActivity
             }
         }
         imageViewGray.setImageBitmap(grayscaleBitmap);
+        equalizeGrayImage(height, width);
+    }
+
+    private void equalizeGrayImage(int height, int width) {
+        int pixelCount = height * width;
+        double[] probabilityArray = new double[256];
+        double[] cummulativeProbability = new double[256];
+        newGrayscaleBitmap = Bitmap.createBitmap(
+                width, height, Bitmap.Config.RGB_565);
+        for (int i = 0; i < grayHistogram.length; i++) {
+            probabilityArray[i] = (double) grayHistogram[i]
+                    / (double) pixelCount;
+            if (i == 0) {
+                cummulativeProbability[i] = probabilityArray[i];
+            } else {
+                cummulativeProbability[i] = (cummulativeProbability[i-1]
+                        + probabilityArray[i]);
+            }
+        }
+        int[] roundingArray = new int[256];
+        for (int i = 0; i < cummulativeProbability.length; i++) {
+            roundingArray[i] = (int) Math.floor(cummulativeProbability[i]
+                    * EQUALIZATION_CONSTANT);
+        }
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int pixel = grayscaleBitmap.getPixel(j, i);
+                int red = Color.red(pixel);
+                int newPixel = Color.rgb(roundingArray[red],
+                        roundingArray[red],
+                        roundingArray[red]);
+                newGrayscaleBitmap.setPixel(j, i, newPixel);
+            }
+        }
+        imageViewGrayProcessed.setImageBitmap(newGrayscaleBitmap);
     }
 
     /**
