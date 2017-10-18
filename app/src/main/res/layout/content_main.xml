@@ -58,12 +58,6 @@
                     android:layout_marginRight="@dimen/activity_horizontal_margin"
                     android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
 
-                <ProgressBar
-                    android:id="@+id/progress_bar_bw"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone"/>
-
                 <ImageView
                     android:id="@+id/iv_photo_bw"
                     android:layout_width="wrap_content"
@@ -72,47 +66,23 @@
             </LinearLayout>
         </HorizontalScrollView>
 
-        <LinearLayout
-            android:id="@+id/ll_object_count"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:text="@string/object_count"
-                android:layout_marginTop="@dimen/activity_vertical_margin" />
-
-            <TextView
-                android:id="@+id/tv_object_count"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:text="0"
-                android:layout_marginTop="@dimen/activity_vertical_margin"
-                android:gravity="center_horizontal"/>
-
-        </LinearLayout>
-
         <Button
-            android:id="@+id/btn_count_object"
+            android:id="@+id/btn_identify"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/count_object"
+            android:text="@string/identify"
             android:background="@color/colorPrimaryDark"
             android:textColor="@android:color/white"
             android:layout_marginTop="@dimen/activity_vertical_margin"
             android:visibility="gone"/>
 
-        <ImageView
-            android:id="@+id/iv_result"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tv_person_name"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/activity_vertical_margin"/>
+            android:textSize="20sp"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:gravity="center"
+            android:layout_gravity="center"/>
     </LinearLayout>
 </ScrollView>

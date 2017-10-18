@@ -46,20 +46,16 @@ public class MainActivity extends AppCompatActivity
     private ImageView imageViewGray;
     private ImageView imageViewBW;
     private ImageView imageViewGrayProcessed;
-    private Button countButton;
-    private ImageView ivResult;
+    private Button identifyButton;
 
-    private LinearLayout llObjectCount0;
-    private TextView tvObjectCount0;
-    private BitmapDrawable originalImageBitmap;
+    private BitmapDrawable originalImageBitmapDrawable;
     private Bitmap grayscaleBitmap;
     private Bitmap blackAndWhiteBitmap;
     private Bitmap newGrayscaleBitmap;
 
-    private ProgressBar progressBarBw;
-
     private ProgressBar progressBar;
     private TextView tvTitle;
+    private TextView tvResultName;
     private int[] grayHistogram = new int[256];
 
     private int maxX, maxY, minX, minY;
@@ -83,12 +79,9 @@ public class MainActivity extends AppCompatActivity
         imageViewBW = (ImageView) findViewById(R.id.iv_photo_bw);
         imageViewGrayProcessed = (ImageView) findViewById(R.id.iv_photo_gray_processed);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        progressBarBw = (ProgressBar) findViewById(R.id.progress_bar_bw);
         tvTitle = (TextView) findViewById(R.id.first_title);
-        tvObjectCount0 = (TextView) findViewById(R.id.tv_object_count);
-        llObjectCount0 = (LinearLayout) findViewById(R.id.ll_object_count);
-        countButton = (Button) findViewById(R.id.btn_count_object);
-        ivResult = (ImageView) findViewById(R.id.iv_result);
+        identifyButton = (Button) findViewById(R.id.btn_identify);
+        tvResultName = (TextView) findViewById(R.id.tv_person_name);
         setButtonListener();
         NavigationView navigationView = (NavigationView) findViewById(
                 R.id.nav_view);
@@ -124,34 +117,105 @@ public class MainActivity extends AppCompatActivity
             Bitmap capturedImageBitmap = (Bitmap) data.getExtras().get("data");
             imageView.setImageBitmap(capturedImageBitmap);
             imageView.setVisibility(View.VISIBLE);
-            originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
+            originalImageBitmapDrawable = (BitmapDrawable) imageView.getDrawable();
             processImage();
+            identifyButton.setVisibility(View.VISIBLE);
+            tvResultName.setText("");
         }
     }
 
     private void setButtonListener() {
-        countButton.setOnClickListener(new View.OnClickListener() {
+        identifyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showLoading();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        countObject();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                tvObjectCount0.setText(
-                                        String.valueOf(objectCount));
-                                llObjectCount0.setVisibility(View.VISIBLE);
-                                ivResult.setVisibility(View.VISIBLE);
-                                hideLoading();
-                            }
-                            });
-                    }
-                }).start();
+                countObject();
+                searchFace();
             }
         });
+    }
+
+    private void searchFace() {
+        int leftX = 255, rightX = 0;
+        int topY = 255, bottomY = 0;
+        for (ChainCode c : objectCodes) {
+            if (c.getCentroidX() < leftX) {
+                leftX = c.getCentroidX();
+            }
+            if (c.getCentroidX() > rightX) {
+                rightX = c.getCentroidX();
+            }
+            if (c.getCentroidY() > bottomY) {
+                bottomY = c.getCentroidY();
+            }
+            if (c.getCentroidY() < topY) {
+                topY = c.getCentroidY();
+            }
+        }
+        float photoWidthRatio = (float)(rightX - leftX)
+                / (float) blackAndWhiteBitmap.getWidth();
+        float photoHeightRatio = (float) (bottomY - topY)
+                / (float) blackAndWhiteBitmap.getHeight();
+        float minError = Float.MAX_VALUE;
+        int idxMinError = -1;
+        int i = 0;
+        for (Face data : SplashActivity.faces) {
+            float dataWidthRatio =
+                    (float) (data.getMostRightX() - data.getMostLeftX())
+                    / (float) (data.getFaceWidth());
+            float dataHeightRatio =
+                    (float) (data.getMostBottomY() - data.getMostTopY())
+                    / (float) (data.getFaceHeight());
+            float widthError = Math.abs(photoWidthRatio - dataWidthRatio);
+            float heightError = Math.abs(photoHeightRatio - dataHeightRatio);
+
+            if (widthError + heightError < minError) {
+                minError = widthError + heightError;
+                idxMinError = i;
+            }
+            i++;
+        }
+        determineName(idxMinError);
+    }
+
+    private void determineName(int idxMinError) {
+        switch (idxMinError) {
+            case 0:
+                tvResultName.setText("This is Nino");
+                break;
+            case 1:
+                tvResultName.setText("This is Kamal");
+                break;
+            case 2:
+                tvResultName.setText("This is Bimo");
+                break;
+            case 3:
+                tvResultName.setText("This is Fari");
+                break;
+            case 4:
+                tvResultName.setText("This is Diaz");
+                break;
+            case 5:
+                tvResultName.setText("This is Dhika");
+                break;
+            case 6:
+                tvResultName.setText("This is Rudi");
+                break;
+            case 7:
+                tvResultName.setText("This is Febi");
+                break;
+            case 8:
+                tvResultName.setText("This is Nugroho");
+                break;
+            case 9:
+                tvResultName.setText("This is Majid");
+                break;
+            case 10:
+                tvResultName.setText("This is Nathan");
+                break;
+            case 11:
+                tvResultName.setText("This is Umay");
+                break;
+        }
     }
 
     private void countObject() {
@@ -170,63 +234,10 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
-        drawResult();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 imageViewBW.setImageBitmap(copyOfBW);
-            }
-        });
-    }
-
-    private void drawResult() {
-        int width = originalImageBitmap.getBitmap().getWidth();
-        int height = originalImageBitmap.getBitmap().getHeight();
-        final Bitmap resultBitmap = Bitmap.createBitmap(width, height,
-                Bitmap.Config.RGB_565);
-        for (ChainCode c : objectCodes) {
-            int currentX = c.getStartX();
-            int currentY = c.getStartY();
-            resultBitmap.setPixel(currentX, currentY, RED_COLOR);
-            resultBitmap.setPixel(c.getCentroidX(), c.getCentroidY(), GREEN_COLOR);
-            for (int dir : c.getCode()) {
-                switch (dir) {
-                    case 0:
-                        currentX = currentX + 1;
-                        break;
-                    case 1:
-                        currentX = currentX + 1;
-                        currentY = currentY - 1;
-                        break;
-                    case 2:
-                        currentY = currentY - 1;
-                        break;
-                    case 3:
-                        currentX = currentX - 1;
-                        currentY = currentY - 1;
-                        break;
-                    case 4:
-                        currentX = currentX - 1;
-                        break;
-                    case 5:
-                        currentX = currentX - 1;
-                        currentY = currentY + 1;
-                        break;
-                    case 6:
-                        currentY = currentY + 1;
-                        break;
-                    case 7:
-                        currentX = currentX + 1;
-                        currentY = currentY + 1;
-                        break;
-                }
-                resultBitmap.setPixel(currentX, currentY, RED_COLOR);
-            }
-        }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ivResult.setImageBitmap(resultBitmap);
             }
         });
     }
@@ -244,32 +255,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
-
-        if (id == R.id.photo_1) {
-            changeImage(R.drawable.photo_1);
-        } else if (id == R.id.photo_2) {
-            changeImage(R.drawable.photo_2);
-        } else if (id == R.id.photo_3) {
-            changeImage(R.drawable.photo_3);
-        } else if (id == R.id.photo_4) {
-            changeImage(R.drawable.photo_4);
-        } else if (id == R.id.photo_5) {
-            changeImage(R.drawable.photo_5);
-        } else if (id == R.id.photo_6) {
-            changeImage(R.drawable.photo_6);
-        } else if (id == R.id.photo_7) {
-            changeImage(R.drawable.photo_7);
-        } else if (id == R.id.photo_8) {
-            changeImage(R.drawable.photo_8);
-        } else if (id == R.id.photo_9) {
-            changeImage(R.drawable.photo_9);
-        } else if (id == R.id.photo_10) {
-            changeImage(R.drawable.photo_10);
-        } else if (id == R.id.photo_11) {
-            changeImage(R.drawable.photo_11);
-        } else if (id == R.id.photo_12) {
-            changeImage(R.drawable.photo_12);
-        }
         tvTitle.setVisibility(View.GONE);
         objectCount = 0;
         showAllView();
@@ -279,51 +264,17 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void hideLoading() {
-        progressBar.setVisibility(View.GONE);
-        showAllView();
-    }
-
-    private void showLoading() {
-        hideAllView();
-        progressBar.setVisibility(View.VISIBLE);
-    }
-
-    private void hideAllView() {
-        imageView.setVisibility(View.GONE);
-        imageViewGray.setVisibility(View.GONE);
-        imageViewBW.setVisibility(View.GONE);
-        imageViewGrayProcessed.setVisibility(View.GONE);
-        tvTitle.setVisibility(View.GONE);
-        llObjectCount0.setVisibility(View.GONE);
-        countButton.setVisibility(View.GONE);
-    }
-
     private void showAllView() {
         imageView.setVisibility(View.VISIBLE);
         imageViewGray.setVisibility(View.VISIBLE);
         imageViewBW.setVisibility(View.VISIBLE);
         imageViewGrayProcessed.setVisibility(View.VISIBLE);
-        countButton.setVisibility(View.VISIBLE);
-    }
-
-    private void changeImage(int newImageId) {
-        Drawable newImage = ResourcesCompat.getDrawable(
-                getResources(), newImageId, null);
-        imageView.setImageDrawable(newImage);
-        originalImageBitmap = (BitmapDrawable) imageView.getDrawable();
-        processImage();
     }
 
     private void processImage() {
         initGrayImage();
-        progressBarBw.setVisibility(View.VISIBLE);
         otsuThresholding();
         imageViewBW.setVisibility(View.VISIBLE);
-        progressBarBw.setVisibility(View.GONE);
-        ivResult.setImageDrawable(null);
-        ivResult.setImageBitmap(null);
-        ivResult.setImageResource(0);
         objectCodes.clear();
     }
 
@@ -331,8 +282,8 @@ public class MainActivity extends AppCompatActivity
      * Search threshold value using otsu thresholding method.
      */
     private void otsuThresholding() {
-        int width = originalImageBitmap.getBitmap().getWidth();
-        int height = originalImageBitmap.getBitmap().getHeight();
+        int width = originalImageBitmapDrawable.getBitmap().getWidth();
+        int height = originalImageBitmapDrawable.getBitmap().getHeight();
         int pixelCount = width * height;
 
         //Calculate sum of pixel value
@@ -413,8 +364,8 @@ public class MainActivity extends AppCompatActivity
      * Draw a grayscale image into a bitmap and set it to ImageView.
      */
     private void initGrayImage() {
-        int height = originalImageBitmap.getBitmap().getHeight();
-        int width = originalImageBitmap.getBitmap().getWidth();
+        int height = originalImageBitmapDrawable.getBitmap().getHeight();
+        int width = originalImageBitmapDrawable.getBitmap().getWidth();
         grayscaleBitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.RGB_565);
 
@@ -424,7 +375,7 @@ public class MainActivity extends AppCompatActivity
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                int pixel = originalImageBitmap.getBitmap().getPixel(j, i);
+                int pixel = originalImageBitmapDrawable.getBitmap().getPixel(j, i);
                 int red = Color.red(pixel);
                 int green = Color.green(pixel);
                 int blue = Color.blue(pixel);

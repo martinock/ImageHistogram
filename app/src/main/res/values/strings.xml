@@ -8,6 +8,9 @@
 
     <string name="welcome_message">Welcome to ImageHistogram! Open the navigation drawer and see the RGB + gray histogram of a photo</string>
 
+    <string name="please_wait">Please wait. Data is being prepared</string>
+    <string name="identify">Identify</string>
+
     <string name="convert_to_bw">Convert to BW</string>
     <string name="normalize">Normalize</string>
     <string name="count_object">Count Object</string>
