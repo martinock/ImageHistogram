@@ -88,16 +88,19 @@ public class SplashActivity extends AppCompatActivity {
             int leftX = 255, rightX = 0;
             int topY = 255, bottomY = 0;
             for (ChainCode c : objectCodes) {
-                if (c.getCentroidX() < leftX) {
+                if (c.getCentroidX() < leftX
+                        && leftX > 0.1 * face.getFaceWidth()) {
                     leftX = c.getCentroidX();
                 }
-                if (c.getCentroidX() > rightX) {
+                if (c.getCentroidX() > rightX
+                        && rightX < 0.9 * face.getFaceWidth()) {
                     rightX = c.getCentroidX();
                 }
-                if (c.getCentroidY() > bottomY) {
+                if (c.getCentroidY() > bottomY
+                        && bottomY < 0.9 * face.getFaceHeight()) {
                     bottomY = c.getCentroidY();
                 }
-                if (c.getCentroidY() < topY) {
+                if (c.getCentroidY() < topY && topY >= 10) {
                     topY = c.getCentroidY();
                 }
             }

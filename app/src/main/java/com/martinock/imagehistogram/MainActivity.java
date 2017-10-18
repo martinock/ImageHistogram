@@ -135,19 +135,29 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void searchFace() {
-        int leftX = 255, rightX = 0;
-        int topY = 255, bottomY = 0;
+        int leftX = originalImageBitmapDrawable.getBitmap().getWidth(),
+                rightX = 0;
+        int topY = originalImageBitmapDrawable.getBitmap().getHeight(),
+                bottomY = 0;
         for (ChainCode c : objectCodes) {
-            if (c.getCentroidX() < leftX) {
+            if (c.getCentroidX() < leftX
+                    && leftX > 0.1 * originalImageBitmapDrawable.getBitmap()
+                    .getWidth()) {
                 leftX = c.getCentroidX();
             }
-            if (c.getCentroidX() > rightX) {
+            if (c.getCentroidX() > rightX
+                    && rightX < 0.9 * originalImageBitmapDrawable.getBitmap()
+                    .getWidth()) {
                 rightX = c.getCentroidX();
             }
-            if (c.getCentroidY() > bottomY) {
+            if (c.getCentroidY() > bottomY
+                    && bottomY < 0.8 * originalImageBitmapDrawable.getBitmap()
+                    .getHeight()) {
                 bottomY = c.getCentroidY();
             }
-            if (c.getCentroidY() < topY) {
+            if (c.getCentroidY() < topY
+                    && topY > 0.2 * originalImageBitmapDrawable.getBitmap()
+                    .getHeight()) {
                 topY = c.getCentroidY();
             }
         }
@@ -215,6 +225,8 @@ public class MainActivity extends AppCompatActivity
             case 11:
                 tvResultName.setText("This is Umay");
                 break;
+            default:
+                tvResultName.setText("Sorry I don't know this face");
         }
     }
 
