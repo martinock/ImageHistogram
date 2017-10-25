@@ -25,9 +25,10 @@ public class SplashActivity extends AppCompatActivity {
     private static int GREEN_COLOR = Color.rgb(0, 255, 0);
 
     private BitmapDrawable originalImageBitmapDrawable;
-    private Bitmap grayscaleBitmap;
+    private Bitmap grayScaleBitmap;
     private Bitmap blackAndWhiteBitmap;
-    private Bitmap newGrayscaleBitmap;
+    private Bitmap newGrayScaleBitmap;
+    private Bitmap smoothedGrayScaleBitmap;
 
     private ArrayList<ChainCode> objectCodes = new ArrayList<>();
 
@@ -327,7 +328,7 @@ public class SplashActivity extends AppCompatActivity {
     private void initGrayImage() {
         int height = originalImageBitmapDrawable.getBitmap().getHeight();
         int width = originalImageBitmapDrawable.getBitmap().getWidth();
-        grayscaleBitmap = Bitmap.createBitmap(width, height,
+        grayScaleBitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.RGB_565);
 
         for (int i = 0; i < grayHistogram.length; i++) {
@@ -343,17 +344,18 @@ public class SplashActivity extends AppCompatActivity {
                 int gray = ((red + green + blue) / 3);
                 grayHistogram[gray]++;
                 int grayColor = Color.rgb(gray, gray, gray);
-                grayscaleBitmap.setPixel(j, i, grayColor);
+                grayScaleBitmap.setPixel(j, i, grayColor);
             }
         }
         equalizeGrayImage(height, width);
+        smoothPicture();
     }
 
     private void equalizeGrayImage(int height, int width) {
         int pixelCount = height * width;
         double[] probabilityArray = new double[256];
         double[] cummulativeProbability = new double[256];
-        newGrayscaleBitmap = Bitmap.createBitmap(
+        newGrayScaleBitmap = Bitmap.createBitmap(
                 width, height, Bitmap.Config.RGB_565);
         for (int i = 0; i < grayHistogram.length; i++) {
             probabilityArray[i] = (double) grayHistogram[i]
@@ -373,12 +375,38 @@ public class SplashActivity extends AppCompatActivity {
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                int pixel = grayscaleBitmap.getPixel(j, i);
+                int pixel = grayScaleBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 int newPixel = Color.rgb(roundingArray[red],
                         roundingArray[red],
                         roundingArray[red]);
-                newGrayscaleBitmap.setPixel(j, i, newPixel);
+                newGrayScaleBitmap.setPixel(j, i, newPixel);
+            }
+        }
+    }
+
+    private void smoothPicture() {
+        int height = newGrayScaleBitmap.getHeight();
+        int width = newGrayScaleBitmap.getWidth();
+        smoothedGrayScaleBitmap = Bitmap.createBitmap(width, height,
+                Bitmap.Config.RGB_565);
+        for (int i = 1; i < height - 1; ++i) {
+            for (int j = 1; j < width - 1; ++j) {
+                double mean = 0.0;
+                for (int k = i - 1; k <= i + 1; ++k) {
+                    for (int l = j - 1; l <= j + 1; ++l) {
+                        int neighbourPixel = newGrayScaleBitmap.getPixel(l, i);
+                        int intensity = Color.red(neighbourPixel);
+                        mean = mean + (double)intensity / 9;
+                    }
+                }
+                int flooredMean = (int)Math.floor(mean);
+                int newColor = Color.rgb(flooredMean, flooredMean, flooredMean);
+                for (int k = i - 1; k <= i + 1; ++k) {
+                    for (int l = j - 1; l <= j + 1; ++l) {
+                        smoothedGrayScaleBitmap.setPixel(l, k, newColor);
+                    }
+                }
             }
         }
     }
@@ -435,13 +463,13 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void convertToBW() {
-        int height = newGrayscaleBitmap.getHeight();
-        int width = newGrayscaleBitmap.getWidth();
+        int height = smoothedGrayScaleBitmap.getHeight();
+        int width = smoothedGrayScaleBitmap.getWidth();
         blackAndWhiteBitmap = Bitmap.createBitmap(
                 width, height, Bitmap.Config.RGB_565);
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                int pixel = newGrayscaleBitmap.getPixel(j, i);
+                int pixel = smoothedGrayScaleBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 int green = Color.green(pixel);
                 int blue = Color.blue(pixel);
