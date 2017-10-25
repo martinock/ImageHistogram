@@ -4,9 +4,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -19,7 +17,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -45,13 +42,15 @@ public class MainActivity extends AppCompatActivity
     private ImageView imageView;
     private ImageView imageViewGray;
     private ImageView imageViewBW;
-    private ImageView imageViewGrayProcessed;
+    private ImageView imageViewGrayContrast;
+    private ImageView imageViewGraySmooth;
     private Button identifyButton;
 
     private BitmapDrawable originalImageBitmapDrawable;
-    private Bitmap grayscaleBitmap;
+    private Bitmap grayScaleBitmap;
     private Bitmap blackAndWhiteBitmap;
-    private Bitmap newGrayscaleBitmap;
+    private Bitmap newGrayScaleBitmap;
+    private Bitmap smoothedGrayScaleBitmap;
 
     private ProgressBar progressBar;
     private TextView tvTitle;
@@ -77,7 +76,8 @@ public class MainActivity extends AppCompatActivity
         imageView = (ImageView) findViewById(R.id.iv_photo);
         imageViewGray = (ImageView) findViewById(R.id.iv_photo_gray);
         imageViewBW = (ImageView) findViewById(R.id.iv_photo_bw);
-        imageViewGrayProcessed = (ImageView) findViewById(R.id.iv_photo_gray_processed);
+        imageViewGrayContrast = (ImageView) findViewById(R.id.iv_photo_gray_processed);
+        imageViewGraySmooth = (ImageView) findViewById(R.id.iv_photo_gray_smoothed);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         tvTitle = (TextView) findViewById(R.id.first_title);
         identifyButton = (Button) findViewById(R.id.btn_identify);
@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity
         imageView.setVisibility(View.VISIBLE);
         imageViewGray.setVisibility(View.VISIBLE);
         imageViewBW.setVisibility(View.VISIBLE);
-        imageViewGrayProcessed.setVisibility(View.VISIBLE);
+        imageViewGrayContrast.setVisibility(View.VISIBLE);
     }
 
     private void processImage() {
@@ -345,13 +345,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void convertToBW() {
-        int height = newGrayscaleBitmap.getHeight();
-        int width = newGrayscaleBitmap.getWidth();
+        int height = smoothedGrayScaleBitmap.getHeight();
+        int width = smoothedGrayScaleBitmap.getWidth();
         blackAndWhiteBitmap = Bitmap.createBitmap(
                 width, height, Bitmap.Config.RGB_565);
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                int pixel = newGrayscaleBitmap.getPixel(j, i);
+                int pixel = smoothedGrayScaleBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 int green = Color.green(pixel);
                 int blue = Color.blue(pixel);
@@ -378,7 +378,7 @@ public class MainActivity extends AppCompatActivity
     private void initGrayImage() {
         int height = originalImageBitmapDrawable.getBitmap().getHeight();
         int width = originalImageBitmapDrawable.getBitmap().getWidth();
-        grayscaleBitmap = Bitmap.createBitmap(width, height,
+        grayScaleBitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.RGB_565);
 
         for (int i = 0; i < grayHistogram.length; i++) {
@@ -394,18 +394,19 @@ public class MainActivity extends AppCompatActivity
                 int gray = ((red + green + blue) / 3);
                 grayHistogram[gray]++;
                 int grayColor = Color.rgb(gray, gray, gray);
-                grayscaleBitmap.setPixel(j, i, grayColor);
+                grayScaleBitmap.setPixel(j, i, grayColor);
             }
         }
-        imageViewGray.setImageBitmap(grayscaleBitmap);
+        imageViewGray.setImageBitmap(grayScaleBitmap);
         equalizeGrayImage(height, width);
+        smoothPicture();
     }
 
     private void equalizeGrayImage(int height, int width) {
         int pixelCount = height * width;
         double[] probabilityArray = new double[256];
         double[] cummulativeProbability = new double[256];
-        newGrayscaleBitmap = Bitmap.createBitmap(
+        newGrayScaleBitmap = Bitmap.createBitmap(
                 width, height, Bitmap.Config.RGB_565);
         for (int i = 0; i < grayHistogram.length; i++) {
             probabilityArray[i] = (double) grayHistogram[i]
@@ -425,15 +426,15 @@ public class MainActivity extends AppCompatActivity
 
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                int pixel = grayscaleBitmap.getPixel(j, i);
+                int pixel = grayScaleBitmap.getPixel(j, i);
                 int red = Color.red(pixel);
                 int newPixel = Color.rgb(roundingArray[red],
                         roundingArray[red],
                         roundingArray[red]);
-                newGrayscaleBitmap.setPixel(j, i, newPixel);
+                newGrayScaleBitmap.setPixel(j, i, newPixel);
             }
         }
-        imageViewGrayProcessed.setImageBitmap(newGrayscaleBitmap);
+        imageViewGrayContrast.setImageBitmap(newGrayScaleBitmap);
     }
 
     /**
@@ -636,5 +637,32 @@ public class MainActivity extends AppCompatActivity
                 nextX++;
             }
         }
+    }
+
+    private void smoothPicture() {
+        int height = newGrayScaleBitmap.getHeight();
+        int width = newGrayScaleBitmap.getWidth();
+        smoothedGrayScaleBitmap = Bitmap.createBitmap(width, height,
+                Bitmap.Config.RGB_565);
+        for (int i = 1; i < height - 1; ++i) {
+            for (int j = 1; j < width - 1; ++j) {
+                double mean = 0.0;
+                for (int k = i - 1; k <= i + 1; ++k) {
+                    for (int l = j - 1; l <= j + 1; ++l) {
+                        int neighbourPixel = newGrayScaleBitmap.getPixel(l, i);
+                        int intensity = Color.red(neighbourPixel);
+                        mean = mean + (double)intensity / 9;
+                    }
+                }
+                int flooredMean = (int)Math.floor(mean);
+                int newColor = Color.rgb(flooredMean, flooredMean, flooredMean);
+                for (int k = i - 1; k <= i + 1; ++k) {
+                    for (int l = j - 1; l <= j + 1; ++l) {
+                        smoothedGrayScaleBitmap.setPixel(l, k, newColor);
+                    }
+                }
+            }
+        }
+        imageViewGraySmooth.setImageBitmap(smoothedGrayScaleBitmap);
     }
 }

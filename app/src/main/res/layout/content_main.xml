@@ -58,6 +58,14 @@
                     android:layout_marginRight="@dimen/activity_horizontal_margin"
                     android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
 
+
+                <ImageView
+                    android:id="@+id/iv_photo_gray_smoothed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+
                 <ImageView
                     android:id="@+id/iv_photo_bw"
                     android:layout_width="wrap_content"
