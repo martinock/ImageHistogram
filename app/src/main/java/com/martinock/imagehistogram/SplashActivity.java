@@ -390,22 +390,58 @@ public class SplashActivity extends AppCompatActivity {
         int width = newGrayScaleBitmap.getWidth();
         smoothedGrayScaleBitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.RGB_565);
-        for (int i = 1; i < height - 1; ++i) {
-            for (int j = 1; j < width - 1; ++j) {
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
                 double mean = 0.0;
-                for (int k = i - 1; k <= i + 1; ++k) {
-                    for (int l = j - 1; l <= j + 1; ++l) {
+                int k, l;
+                int heightBound = i + 1;
+                int widthBound = j + 1;
+                if (i == 0) {
+                    k = 0;
+                } else if (i == height - 1) {
+                    k = i - 1;
+                    heightBound = i;
+                } else {
+                    k = i - 1;
+                }
+                if (j == 0) {
+                    l = 0;
+                } else if (j == width - 1) {
+                    l = j - 1;
+                    widthBound = j;
+                } else {
+                    l = j - 1;
+                }
+                int count = 0;
+                while (k <= heightBound) {
+                    while (l <= widthBound) {
                         int neighbourPixel = newGrayScaleBitmap.getPixel(l, i);
                         int intensity = Color.red(neighbourPixel);
-                        mean = mean + (double)intensity / 9;
+                        mean = mean + (double)intensity;
+                        count++;
+                        ++l;
                     }
+                    ++k;
                 }
+                mean = mean / (double) count;
                 int flooredMean = (int)Math.floor(mean);
                 int newColor = Color.rgb(flooredMean, flooredMean, flooredMean);
-                for (int k = i - 1; k <= i + 1; ++k) {
-                    for (int l = j - 1; l <= j + 1; ++l) {
+                if (i == 0) {
+                    k = 0;
+                } else {
+                    k = i - 1;
+                }
+                if (j == 0) {
+                    l = 0;
+                } else {
+                    l = j - 1;
+                }
+                while (k <= heightBound) {
+                    while (l <= widthBound) {
                         smoothedGrayScaleBitmap.setPixel(l, k, newColor);
+                        ++l;
                     }
+                    ++k;
                 }
             }
         }
