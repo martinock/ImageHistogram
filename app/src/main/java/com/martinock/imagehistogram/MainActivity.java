@@ -325,6 +325,8 @@ public class MainActivity extends AppCompatActivity
                     queueY.add(pointY + 1);
                 }
                 pointX--;
+                currentColor = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(pointX, pointY);
             }
             int rightCurrentPixel = originalImageBitmapDrawable.getBitmap().getPixel(nextX, pointY);
             while ((nextX < originalImageBitmapDrawable.getBitmap().getWidth() - 1)
@@ -357,7 +359,8 @@ public class MainActivity extends AppCompatActivity
                     queueX.add(nextX);
                     queueY.add(pointY - 1);
                 }
-                int belowNextPixel = originalImageBitmapDrawable.getBitmap().getPixel(nextX, pointY + 1);
+                int belowNextPixel = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(nextX, pointY + 1);
                 if ((pointY < originalImageBitmapDrawable.getBitmap().getHeight() - 1)
                         && (Color.red(belowNextPixel) >= Color.red(MIN_SKIN_COLOR)
                         && Color.red(belowNextPixel) <= Color.red(MAX_SKIN_COLOR)
@@ -369,6 +372,8 @@ public class MainActivity extends AppCompatActivity
                     queueY.add(pointY + 1);
                 }
                 nextX++;
+                rightCurrentPixel = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(nextX, pointY);
             }
         }
         faceBoundList.add(new FaceBound(maxX, minX, maxY, minY));
