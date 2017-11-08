@@ -222,20 +222,9 @@ public class MainActivity extends AppCompatActivity
     private void searchFaces() {
         int width = originalImageBitmapDrawable.getBitmap().getWidth();
         int height = originalImageBitmapDrawable.getBitmap().getHeight();
-        boolean skip = false;
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
                 int pixel = originalImageBitmapDrawable.getBitmap().getPixel(j, i);
-                for (FaceBound fb : faceBoundList) {
-                    if (fb.isInBoundary(j,i)) {
-                        skip = true;
-                        break;
-                    }
-                }
-                if (skip) {
-                    skip = false;
-                    continue;
-                }
                 if (Color.red(pixel) >= Color.red(MIN_SKIN_COLOR)
                         && Color.red(pixel) <= Color.red(MAX_SKIN_COLOR)
                         && Color.green(pixel) >= Color.green(MIN_SKIN_COLOR)
@@ -309,6 +298,9 @@ public class MainActivity extends AppCompatActivity
                 if (pointY < minY) {
                     minY = pointY;
                 }
+                originalImageBitmapDrawable.getBitmap()
+                        .setPixel(pointX, pointY, WHITE_COLOR);
+
                 int aboveCurrentPixel = originalImageBitmapDrawable.getBitmap()
                         .getPixel(pointX, pointY - 1);
                 if ((pointY > 0)
@@ -351,6 +343,8 @@ public class MainActivity extends AppCompatActivity
                 if (pointY < minY) {
                     minY = pointY;
                 }
+                originalImageBitmapDrawable.getBitmap()
+                        .setPixel(nextX, pointY, WHITE_COLOR);
 
                 int aboveNextPixel = originalImageBitmapDrawable.getBitmap().getPixel(
                         nextX, pointY - 1);
