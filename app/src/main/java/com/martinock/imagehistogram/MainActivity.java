@@ -328,7 +328,11 @@ public class MainActivity extends AppCompatActivity
                 currentColor = originalImageBitmapDrawable.getBitmap()
                         .getPixel(pointX, pointY);
             }
-            int rightCurrentPixel = originalImageBitmapDrawable.getBitmap().getPixel(nextX, pointY);
+            if (nextX >= originalImageBitmapDrawable.getBitmap().getWidth()) {
+                nextX = originalImageBitmapDrawable.getBitmap().getWidth() - 1;
+            }
+            int rightCurrentPixel = originalImageBitmapDrawable.getBitmap()
+                    .getPixel(nextX, pointY);
             while ((nextX < originalImageBitmapDrawable.getBitmap().getWidth() - 1)
                     && (Color.red(rightCurrentPixel) >= Color.red(MIN_SKIN_COLOR)
                     && Color.red(rightCurrentPixel) <= Color.red(MAX_SKIN_COLOR)
