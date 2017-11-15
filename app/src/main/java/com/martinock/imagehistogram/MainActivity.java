@@ -222,16 +222,42 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void drawRect(Bitmap copyBitmap) {
+        List<FaceBound> nonFaceIdxs = new ArrayList<>();
         for (FaceBound fb : faceBoundList) {
-            for (int i = fb.minY; i <= fb.maxY; ++i) {
-                copyBitmap.setPixel(fb.maxX, i, Color.rgb(0, 255, 0));
-                copyBitmap.setPixel(fb.minX, i, Color.rgb(0, 255, 0));
-            }
-            for (int i = fb.minX; i <= fb.maxX; ++i) {
-                copyBitmap.setPixel(i, fb.maxY, Color.rgb(0, 255, 0));
-                copyBitmap.setPixel(i, fb.minY, Color.rgb(0, 255, 0));
+            //remove non-face component here
+            if (isFace(fb)) {
+                for (int i = fb.minY; i <= fb.maxY; ++i) {
+                    copyBitmap.setPixel(fb.maxX, i, Color.rgb(0, 255, 0));
+                    copyBitmap.setPixel(fb.minX, i, Color.rgb(0, 255, 0));
+                }
+                for (int i = fb.minX; i <= fb.maxX; ++i) {
+                    copyBitmap.setPixel(i, fb.maxY, Color.rgb(0, 255, 0));
+                    copyBitmap.setPixel(i, fb.minY, Color.rgb(0, 255, 0));
+                }
+            } else {
+                nonFaceIdxs.add(fb);
             }
         }
+        faceBoundList.removeAll(nonFaceIdxs);
+    }
+
+    private boolean isFace(FaceBound fb) {
+        int objectCount = 0;
+        for (int i = fb.minY; i <= fb.maxY; ++i) {
+            for (int j = fb.minX; j <= fb.maxX; ++j) {
+                int pixel = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(j, i);
+                if (pixel != WHITE_COLOR) {
+                    floodFill(originalImageBitmapDrawable.getBitmap(),
+                            j, i, WHITE_COLOR);
+                    objectCount++;
+                }
+            }
+            if (objectCount >= 4) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void searchFaceEnd(int x, int y) {
@@ -830,6 +856,57 @@ public class MainActivity extends AppCompatActivity
                 if ((pointY < blackAndWhiteBitmap.getHeight() - 1)
                         && (blackAndWhiteBitmap.getPixel(nextX, pointY + 1)
                         == prevColor)) {
+                    queueX.add(nextX);
+                    queueY.add(pointY + 1);
+                }
+                nextX++;
+            }
+        }
+    }
+
+    private void floodFill(Bitmap bitmap, int x, int y, int newColor) {
+        Queue<Integer> queueX = new LinkedList<>();
+        Queue<Integer> queueY = new LinkedList<>();
+        queueX.add(x);
+        queueY.add(y);
+        while (queueX.size() > 0 && queueY.size() > 0) {
+            int pointX = queueX.poll();
+            int pointY = queueY.poll();
+            if (bitmap.getPixel(pointX, pointY) == newColor) {
+                continue;
+            }
+
+            int nextX = pointX + 1;
+            while ((pointX >= 0) && (bitmap.getPixel(pointX, pointY)
+                    != newColor)) {
+                bitmap.setPixel(pointX, pointY, newColor);
+                if ((pointY > 0)
+                        && (bitmap.getPixel(pointX, pointY - 1)
+                        == newColor)) {
+                    queueX.add(pointX);
+                    queueY.add(pointY - 1);
+                }
+                if ((pointY < bitmap.getHeight() - 1)
+                        && (bitmap.getPixel(pointX, pointY + 1)
+                        != newColor)) {
+                    queueX.add(pointX);
+                    queueY.add(pointY + 1);
+                }
+                pointX--;
+            }
+            while ((nextX < bitmap.getWidth() - 1)
+                    && (bitmap.getPixel(nextX, pointY)
+                    != newColor)) {
+                bitmap.setPixel(nextX, pointY, newColor);
+
+                if ((pointY > 0) && (bitmap.getPixel(
+                        nextX, pointY - 1) != newColor)) {
+                    queueX.add(nextX);
+                    queueY.add(pointY - 1);
+                }
+                if ((pointY < bitmap.getHeight() - 1)
+                        && (bitmap.getPixel(nextX, pointY + 1)
+                        != newColor)) {
                     queueX.add(nextX);
                     queueY.add(pointY + 1);
                 }
