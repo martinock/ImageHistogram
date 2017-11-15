@@ -18,9 +18,6 @@ public class SplashActivity extends AppCompatActivity {
 
     public static List<Face> faces = new ArrayList<>();
     private static List<Integer> imagesId = new ArrayList<>();
-    public static List<Integer> faceRed = new ArrayList<>();
-    public static List<Integer> faceGreen = new ArrayList<>();
-    public static List<Integer> faceBlue = new ArrayList<>();
 
     private static int BLACK_COLOR = Color.rgb(0, 0, 0);
     private static int WHITE_COLOR = Color.rgb(255, 255, 255);
@@ -83,12 +80,6 @@ public class SplashActivity extends AppCompatActivity {
                     getResources(), imageId, null);
             originalImageBitmapDrawable =
                     (BitmapDrawable) newImage;
-            int centerX = originalImageBitmapDrawable.getBitmap().getWidth() / 2;
-            int centerY = originalImageBitmapDrawable.getBitmap().getHeight() / 2;
-            int centerPixel = originalImageBitmapDrawable.getBitmap().getPixel(centerX, centerY);
-            faceRed.add(Color.red(centerPixel));
-            faceBlue.add(Color.blue(centerPixel));
-            faceGreen.add(Color.green(centerPixel));
             initGrayImage();
             otsuThresholding();
             countObject();

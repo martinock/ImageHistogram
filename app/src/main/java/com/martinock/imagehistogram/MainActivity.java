@@ -40,7 +40,8 @@ public class MainActivity extends AppCompatActivity
     private static int GREEN_COLOR = Color.rgb(0, 255, 0);
     private static int EQUALIZATION_CONSTANT = 255;
 
-    private static int MIN_SKIN_COLOR = 0;
+    private static int MIN_SKIN_COLOR = Color.argb(16,96,
+            41, 21);
     private static int MAX_SKIN_COLOR = 0;
 
     private int bwThreshold;
@@ -103,10 +104,12 @@ public class MainActivity extends AppCompatActivity
         switch (item.getItemId()) {
             case R.id.action_camera:
                 //Open Camera
+                faceBoundList.clear();
                 Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                 startActivityForResult(intent, CAMERA_PIC_REQUEST);
                 break;
             case R.id.action_file:
+                faceBoundList.clear();
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
                 photoPickerIntent.setType("image/*");
                 startActivityForResult(photoPickerIntent, RESULT_LOAD_IMG);
@@ -174,83 +177,65 @@ public class MainActivity extends AppCompatActivity
         identifyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!isGroupImage) {
-                    countObject();
-                    searchFace();
-                } else {
-                    searchSkinColor();
-                    searchFaces();
-                }
+                searchFaces();
             }
         });
-    }
-
-    private void searchSkinColor() {
-        int redMin = SplashActivity.faceRed.get(0);
-        int greenMin = SplashActivity.faceBlue.get(0);
-        int blueMin = SplashActivity.faceGreen.get(0);
-        int redMax = SplashActivity.faceRed.get(0);
-        int greenMax = SplashActivity.faceBlue.get(0);
-        int blueMax = SplashActivity.faceGreen.get(0);
-        for (int i = 1; i < SplashActivity.faceRed.size(); ++i) {
-            int red = SplashActivity.faceRed.get(i);
-            int green = SplashActivity.faceGreen.get(i);
-            int blue = SplashActivity.faceBlue.get(i);
-            if (red < redMin) {
-                redMin = red;
-            }
-            if (red > redMax) {
-                redMax = red;
-            }
-            if (green < greenMin) {
-                greenMin = green;
-            }
-            if (green > greenMax) {
-                greenMax = green;
-            }
-            if (blue < blueMin) {
-                blueMin = blue;
-            }
-            if (blue > blueMax) {
-                blueMax = blue;
-            }
-        }
-        MIN_SKIN_COLOR = Color.rgb(redMin, greenMin, blueMin);
-        MAX_SKIN_COLOR = Color.rgb(redMax, greenMax, blueMax);
     }
 
     private void searchFaces() {
         int width = originalImageBitmapDrawable.getBitmap().getWidth();
         int height = originalImageBitmapDrawable.getBitmap().getHeight();
+        Bitmap copyBitmap = originalImageBitmapDrawable.getBitmap().copy(
+                Bitmap.Config.RGB_565, true);
         for (int i = 0; i < height; ++i) {
             for (int j = 0; j < width; ++j) {
-                int pixel = originalImageBitmapDrawable.getBitmap().getPixel(j, i);
-                if (Color.red(pixel) >= Color.red(MIN_SKIN_COLOR)
-                        && Color.red(pixel) <= Color.red(MAX_SKIN_COLOR)
-                        && Color.green(pixel) >= Color.green(MIN_SKIN_COLOR)
-                        && Color.green(pixel) <= Color.green(MAX_SKIN_COLOR)
-                        && Color.blue(pixel) >= Color.blue(MIN_SKIN_COLOR)
-                        && Color.blue(pixel) <= Color.blue(MAX_SKIN_COLOR)) {
+                int pixel = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(j, i);
+                if (isSkinColor(pixel)) {
                     searchFaceEnd(j, i);
-                    drawRect();
                 }
             }
         }
+        drawRect(copyBitmap);
+        imageView.setImageBitmap(copyBitmap);
         isGroupImage = false;
     }
 
-    private void drawRect() {
-        for (int i = minY; i <= maxY; ++i) {
-            originalImageBitmapDrawable.getBitmap().setPixel(maxX, i, Color.rgb(0, 255, 0));
-            originalImageBitmapDrawable.getBitmap().setPixel(minX, i, Color.rgb(0, 255, 0));
+    private boolean isSkinColor(int pixel) {
+        boolean isSkinColor = false;
+        float[] pixelHSV = new float[3];
+        Color.colorToHSV(pixel,pixelHSV);
+        int alpha = Color.alpha(pixel);
+        int red = Color.red(pixel);
+        int green = Color.green(pixel);
+        int blue = Color.blue(pixel);
+        if (alpha >= Color.alpha(MIN_SKIN_COLOR)
+                && red >= Color.red(MIN_SKIN_COLOR)
+                && green >= Color.green(MIN_SKIN_COLOR)
+                && blue >= Color.blue(MIN_SKIN_COLOR)
+                && Math.abs(red - green) >= 16
+                && (pixelHSV[0] >= 0.0 && pixelHSV[0] <= 50.0)
+                && (pixelHSV[1] >= 0.23 && pixelHSV[1] <= 0.68)) {
+            isSkinColor = true;
         }
-        for (int i = minX; i <= maxX; ++i) {
-            originalImageBitmapDrawable.getBitmap().setPixel(i, maxY, Color.rgb(0, 255, 0));
-            originalImageBitmapDrawable.getBitmap().setPixel(i, minY, Color.rgb(0, 255, 0));
+        return isSkinColor;
+    }
+
+    private void drawRect(Bitmap copyBitmap) {
+        for (FaceBound fb : faceBoundList) {
+            for (int i = fb.minY; i <= fb.maxY; ++i) {
+                copyBitmap.setPixel(fb.maxX, i, Color.rgb(0, 255, 0));
+                copyBitmap.setPixel(fb.minX, i, Color.rgb(0, 255, 0));
+            }
+            for (int i = fb.minX; i <= fb.maxX; ++i) {
+                copyBitmap.setPixel(i, fb.maxY, Color.rgb(0, 255, 0));
+                copyBitmap.setPixel(i, fb.minY, Color.rgb(0, 255, 0));
+            }
         }
     }
 
     private void searchFaceEnd(int x, int y) {
+        int countObject = 0;
         maxX = x;
         maxY = y;
         minX = x;
@@ -264,31 +249,17 @@ public class MainActivity extends AppCompatActivity
             int pointY = queueY.poll();
             int currentColor = originalImageBitmapDrawable.getBitmap()
                     .getPixel(pointX, pointY);
-            int currentRed = Color.red(currentColor);
-            int currentGreen = Color.green(currentColor);
-            int currentBlue = Color.blue(currentColor);
-            int minRed = Color.red(MIN_SKIN_COLOR);
-            int maxRed = Color.red(MAX_SKIN_COLOR);
-            int minGreen = Color.green(MIN_SKIN_COLOR);
-            int maxGreen = Color.green(MAX_SKIN_COLOR);
-            int minBlue = Color.blue(MIN_SKIN_COLOR);
-            int maxBlue = Color.blue(MAX_SKIN_COLOR);
-            if (currentRed < minRed
-                    || currentRed > maxRed
-                    || currentGreen < minGreen
-                    || currentGreen > maxGreen
-                    || currentBlue < minBlue
-                    || currentBlue > maxBlue) {
+            if (!isSkinColor(currentColor)) {
                 continue;
             }
 
             int nextX = pointX + 1;
-            while ((pointX >= 0) && (Color.red(currentColor) >= Color.red(MIN_SKIN_COLOR)
-                    && Color.red(currentColor) <= Color.red(MAX_SKIN_COLOR)
-                    && Color.green(currentColor) >= Color.green(MIN_SKIN_COLOR)
-                    && Color.green(currentColor) <= Color.green(MAX_SKIN_COLOR)
-                    && Color.blue(currentColor) >= Color.blue(MIN_SKIN_COLOR)
-                    && Color.blue(currentColor) <= Color.blue(MAX_SKIN_COLOR))) {
+            if (nextX >= originalImageBitmapDrawable.getBitmap().getWidth()) {
+                nextX = originalImageBitmapDrawable.getBitmap().getWidth() - 1;
+            }
+            while ((pointX >= 0) && isSkinColor(currentColor)) {
+                currentColor = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(pointX, pointY);
                 if (pointX < minX) {
                     minX = pointX;
                 }
@@ -300,48 +271,34 @@ public class MainActivity extends AppCompatActivity
                 }
                 originalImageBitmapDrawable.getBitmap()
                         .setPixel(pointX, pointY, WHITE_COLOR);
+                countObject++;
 
                 int aboveCurrentPixel = originalImageBitmapDrawable.getBitmap()
-                        .getPixel(pointX, pointY - 1);
-                if ((pointY > 0)
-                        && (Color.red(aboveCurrentPixel) >= Color.red(MIN_SKIN_COLOR)
-                        && Color.red(aboveCurrentPixel) <= Color.red(MAX_SKIN_COLOR)
-                        && Color.green(aboveCurrentPixel) >= Color.green(MIN_SKIN_COLOR)
-                        && Color.green(aboveCurrentPixel) <= Color.green(MAX_SKIN_COLOR)
-                        && Color.blue(aboveCurrentPixel) >= Color.blue(MIN_SKIN_COLOR)
-                        && Color.blue(aboveCurrentPixel) <= Color.blue(MAX_SKIN_COLOR))) {
+                        .getPixel(pointX, pointY == 0 ? pointY : pointY - 1);
+                if ((pointY > 0) && isSkinColor(aboveCurrentPixel)) {
                     queueX.add(pointX);
                     queueY.add(pointY - 1);
                 }
-                int belowCurrentPixel = originalImageBitmapDrawable.getBitmap().getPixel(pointX, pointY + 1);
-                if ((pointY < originalImageBitmapDrawable.getBitmap().getHeight() - 1)
-                        && (Color.red(belowCurrentPixel) >= Color.red(MIN_SKIN_COLOR)
-                        && Color.red(belowCurrentPixel) <= Color.red(MAX_SKIN_COLOR)
-                        && Color.green(belowCurrentPixel) >= Color.green(MIN_SKIN_COLOR)
-                        && Color.green(belowCurrentPixel) <= Color.green(MAX_SKIN_COLOR)
-                        && Color.blue(belowCurrentPixel) >= Color.blue(MIN_SKIN_COLOR)
-                        && Color.blue(belowCurrentPixel) <= Color.blue(MAX_SKIN_COLOR))) {
+                int belowCurrentPixel = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(pointX,
+                                pointY == originalImageBitmapDrawable
+                                        .getBitmap().getHeight() - 1
+                                        ? pointY : pointY + 1);
+                if ((pointY < originalImageBitmapDrawable.getBitmap()
+                        .getHeight() - 1) && isSkinColor(belowCurrentPixel)) {
                     queueX.add(pointX);
                     queueY.add(pointY + 1);
                 }
                 pointX--;
-                currentColor = originalImageBitmapDrawable.getBitmap()
-                        .getPixel(pointX, pointY);
-            }
-            if (nextX >= originalImageBitmapDrawable.getBitmap().getWidth()) {
-                nextX = originalImageBitmapDrawable.getBitmap().getWidth() - 1;
             }
             int rightCurrentPixel = originalImageBitmapDrawable.getBitmap()
                     .getPixel(nextX, pointY);
             while ((nextX < originalImageBitmapDrawable.getBitmap().getWidth() - 1)
-                    && (Color.red(rightCurrentPixel) >= Color.red(MIN_SKIN_COLOR)
-                    && Color.red(rightCurrentPixel) <= Color.red(MAX_SKIN_COLOR)
-                    && Color.green(rightCurrentPixel) >= Color.green(MIN_SKIN_COLOR)
-                    && Color.green(rightCurrentPixel) <= Color.green(MAX_SKIN_COLOR)
-                    && Color.blue(rightCurrentPixel) >= Color.blue(MIN_SKIN_COLOR)
-                    && Color.blue(rightCurrentPixel) <= Color.blue(MAX_SKIN_COLOR))) {
-                if (pointX > maxX) {
-                    maxX = pointX;
+                    && isSkinColor(rightCurrentPixel)) {
+                rightCurrentPixel = originalImageBitmapDrawable.getBitmap()
+                        .getPixel(nextX, pointY);
+                if (nextX > maxX) {
+                    maxX = nextX;
                 }
                 if (pointY > maxY) {
                     maxY = pointY;
@@ -351,36 +308,29 @@ public class MainActivity extends AppCompatActivity
                 }
                 originalImageBitmapDrawable.getBitmap()
                         .setPixel(nextX, pointY, WHITE_COLOR);
+                countObject++;
 
                 int aboveNextPixel = originalImageBitmapDrawable.getBitmap().getPixel(
-                        nextX, pointY - 1);
-                if ((pointY > 0) && (Color.red(aboveNextPixel) >= Color.red(MIN_SKIN_COLOR)
-                        && Color.red(aboveNextPixel) <= Color.red(MAX_SKIN_COLOR)
-                        && Color.green(aboveNextPixel) >= Color.green(MIN_SKIN_COLOR)
-                        && Color.green(aboveNextPixel) <= Color.green(MAX_SKIN_COLOR)
-                        && Color.blue(aboveNextPixel) >= Color.blue(MIN_SKIN_COLOR)
-                        && Color.blue(aboveNextPixel) <= Color.blue(MAX_SKIN_COLOR))) {
+                        nextX, pointY == 0 ? pointY : pointY - 1);
+                if ((pointY > 0) && isSkinColor(aboveNextPixel)) {
                     queueX.add(nextX);
                     queueY.add(pointY - 1);
                 }
                 int belowNextPixel = originalImageBitmapDrawable.getBitmap()
-                        .getPixel(nextX, pointY + 1);
+                        .getPixel(nextX, pointY == originalImageBitmapDrawable
+                                .getBitmap().getHeight() - 1
+                                ? pointY : pointY + 1);
                 if ((pointY < originalImageBitmapDrawable.getBitmap().getHeight() - 1)
-                        && (Color.red(belowNextPixel) >= Color.red(MIN_SKIN_COLOR)
-                        && Color.red(belowNextPixel) <= Color.red(MAX_SKIN_COLOR)
-                        && Color.green(belowNextPixel) >= Color.green(MIN_SKIN_COLOR)
-                        && Color.green(belowNextPixel) <= Color.green(MAX_SKIN_COLOR)
-                        && Color.blue(belowNextPixel) >= Color.blue(MIN_SKIN_COLOR)
-                        && Color.blue(belowNextPixel) <= Color.blue(MAX_SKIN_COLOR))) {
+                        && isSkinColor(belowNextPixel)) {
                     queueX.add(nextX);
                     queueY.add(pointY + 1);
                 }
                 nextX++;
-                rightCurrentPixel = originalImageBitmapDrawable.getBitmap()
-                        .getPixel(nextX, pointY);
             }
         }
-        faceBoundList.add(new FaceBound(maxX, minX, maxY, minY));
+        if (countObject >= 51) {
+            faceBoundList.add(new FaceBound(maxX, minX, maxY, minY));
+        }
     }
 
     private void searchFace() {
