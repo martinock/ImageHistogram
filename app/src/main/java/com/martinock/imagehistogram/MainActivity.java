@@ -19,6 +19,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,7 +45,6 @@ public class MainActivity extends AppCompatActivity
 
     private static int MIN_SKIN_COLOR = Color.argb(16,96,
             41, 21);
-    private static int MAX_SKIN_COLOR = 0;
 
     private int bwThreshold;
     private int componentCount = 0;
@@ -55,7 +57,11 @@ public class MainActivity extends AppCompatActivity
     private ImageView imageViewBW;
     private ImageView imageViewGrayContrast;
     private ImageView imageViewGraySmooth;
+    private ImageView imageViewFiltered;
     private Button identifyButton;
+    private Button filterButton;
+    private RadioGroup filterGroup;
+    private LinearLayout llFilter;
 
     private BitmapDrawable originalImageBitmapDrawable;
     private Bitmap grayScaleBitmap;
@@ -90,9 +96,13 @@ public class MainActivity extends AppCompatActivity
         imageViewBW = (ImageView) findViewById(R.id.iv_photo_bw);
         imageViewGrayContrast = (ImageView) findViewById(R.id.iv_photo_gray_processed);
         imageViewGraySmooth = (ImageView) findViewById(R.id.iv_photo_gray_smoothed);
+        imageViewFiltered = (ImageView) findViewById(R.id.iv_photo_filtered);
         tvTitle = (TextView) findViewById(R.id.first_title);
         identifyButton = (Button) findViewById(R.id.btn_identify);
         tvResultName = (TextView) findViewById(R.id.tv_person_name);
+        llFilter = (LinearLayout) findViewById(R.id.ll_filter);
+        filterButton = (Button) findViewById(R.id.btn_filter);
+        filterGroup = (RadioGroup) findViewById(R.id.filter_group);
         setButtonListener();
         NavigationView navigationView = (NavigationView) findViewById(
                 R.id.nav_view);
@@ -135,7 +145,11 @@ public class MainActivity extends AppCompatActivity
             Bitmap capturedImageBitmap = (Bitmap) data.getExtras().get("data");
             imageView.setImageBitmap(capturedImageBitmap);
             imageView.setVisibility(View.VISIBLE);
-            originalImageBitmapDrawable = (BitmapDrawable) imageView.getDrawable();
+            Bitmap uneditableBitmap = ((BitmapDrawable)imageView.getDrawable())
+                    .getBitmap();
+            originalImageBitmapDrawable = new BitmapDrawable(getResources(),
+                    uneditableBitmap.copy(
+                            Bitmap.Config.RGB_565, true));
             processImage();
             identifyButton.setVisibility(View.VISIBLE);
             tvResultName.setText("");
@@ -160,6 +174,7 @@ public class MainActivity extends AppCompatActivity
                     originalImageBitmapDrawable = (BitmapDrawable) imageView.getDrawable();
                     identifyButton.setVisibility(View.VISIBLE);
                     tvResultName.setText("");
+                    processImage();
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                     Toast.makeText(getApplicationContext(),
@@ -180,6 +195,93 @@ public class MainActivity extends AppCompatActivity
                 searchFaces();
             }
         });
+        filterButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int selectedId = filterGroup.getCheckedRadioButtonId();
+                RadioButton selectedButton =
+                        (RadioButton) filterGroup.findViewById(selectedId);
+                int idx = filterGroup.indexOfChild(selectedButton);
+                switch (idx) {
+                    case 0:
+                        doSobelFilter();
+                        break;
+                    case 1:
+                        doPrewittFilter();
+                        break;
+                    case 2:
+                        doFourierFilter();
+                        break;
+                }
+            }
+        });
+    }
+
+    private Bitmap convolution2D(int[][] filter) {
+        // find center position of kernel (half of kernel size)
+        int kCenterX = filter[0].length / 2;
+        int kCenterY = filter.length / 2;
+        int rows = originalImageBitmapDrawable.getBitmap().getHeight();
+        int cols = originalImageBitmapDrawable.getBitmap().getWidth();
+        Bitmap result = Bitmap.createBitmap(cols, rows, Bitmap.Config.RGB_565);
+        int out[][] = new int[rows][cols];
+
+        // rows
+        for(int i=0; i < rows; ++i) {
+            // columns
+            for(int j=0; j < cols; ++j) {
+                // kernel rows
+                for(int m=0; m < filter.length; ++m) {
+                    // row index of flipped kernel
+                    int mm = filter.length - 1 - m;
+                    // kernel columns
+                    for(int n=0; n < filter[0].length; ++n) {
+                        int nn = filter[0].length - 1 - n;  // column index of flipped kernel
+
+                        // index of input signal, used for checking boundary
+                        int ii = i + (m - kCenterY);
+                        int jj = j + (n - kCenterX);
+
+                        // ignore input samples which are out of bound
+                        if ( ii >= 0 && ii < rows && jj >= 0 && jj < cols ) {
+                            out[i][j] += Color.red(
+                                    grayScaleBitmap.getPixel(jj, ii))
+                                    * filter[mm][nn] / 255;
+                        }
+                    }
+                }
+                int insertedColor = Color.rgb(
+                        out[i][j], out[i][j], out[i][j]);
+                result.setPixel(j, i, insertedColor);
+            }
+        }
+        return result;
+    }
+
+    private void doSobelFilter() {
+        Bitmap x = convolution2D(ConstantMatrix.SOBEL_OPERATOR_X);
+        Bitmap y = convolution2D(ConstantMatrix.SOBEL_OPERATOR_Y);
+        Bitmap result = Bitmap.createBitmap(x.getWidth(), x.getHeight(),
+                Bitmap.Config.RGB_565);
+        for (int i = 0; i < x.getHeight(); ++i) {
+            for (int j = 0; j < x.getWidth(); ++j) {
+                int xValue = Color.red(x.getPixel(j, i));
+                int yValue = Color.red(y.getPixel(j, i));
+                double zValue = Math.sqrt(Math.pow((double)xValue, 2)
+                        + Math.pow((double)yValue, 2));
+                int zColor = Color.rgb((int)zValue, (int)zValue, (int)zValue);
+                result.setPixel(j, i, zColor);
+            }
+        }
+        imageViewFiltered.setImageBitmap(result);
+    }
+
+    private void doPrewittFilter() {
+
+    }
+
+    private void doFourierFilter() {
+
     }
 
     private void searchFaces() {
@@ -197,6 +299,7 @@ public class MainActivity extends AppCompatActivity
             }
         }
         drawRect(copyBitmap);
+        llFilter.setVisibility(View.VISIBLE);
         imageView.setImageBitmap(copyBitmap);
         isGroupImage = false;
     }

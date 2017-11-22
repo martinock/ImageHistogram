@@ -10,12 +10,14 @@
 
     <string name="please_wait">Please wait. Data is being prepared</string>
     <string name="identify">Identify</string>
+    <string name="filter">Filter</string>
+    <string name="sobel">Sobel Filter</string>
+    <string name="prewitt">Prewitt Filter</string>
+    <string name="fourier">Fourier Filter</string>
 
     <string name="convert_to_bw">Convert to BW</string>
     <string name="normalize">Normalize</string>
     <string name="count_object">Count Object</string>
 
     <string name="object_count">Jumlah Objek:</string>
-    <string name="object_count_0">Jumlah 0:</string>
-    <string name="object_count_1">Jumlah 1:</string>
 </resources>

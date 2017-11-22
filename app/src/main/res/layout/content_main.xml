@@ -67,6 +67,13 @@
                     android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
 
                 <ImageView
+                    android:id="@+id/iv_photo_filtered"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+
+                <ImageView
                     android:id="@+id/iv_photo_bw"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -83,6 +90,49 @@
             android:textColor="@android:color/white"
             android:layout_marginTop="@dimen/activity_vertical_margin"
             android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/ll_filter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:visibility="gone">
+            <RadioGroup
+                android:id="@+id/filter_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton
+                    android:id="@+id/option_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sobel"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+                <RadioButton
+                    android:id="@+id/option_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/prewitt"
+                    android:layout_marginRight="@dimen/activity_horizontal_margin"
+                    android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+                <RadioButton
+                    android:id="@+id/option_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/fourier"/>
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/btn_filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/filter"
+                android:background="@color/colorPrimaryDark"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="@dimen/activity_vertical_margin"/>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tv_person_name"
