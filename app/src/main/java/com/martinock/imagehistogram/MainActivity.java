@@ -277,7 +277,21 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void doPrewittFilter() {
-
+        Bitmap x = convolution2D(ConstantMatrix.PREWITT_OPERATOR_X);
+        Bitmap y = convolution2D(ConstantMatrix.PREWITT_OPERATOR_Y);
+        Bitmap result = Bitmap.createBitmap(x.getWidth(), x.getHeight(),
+                Bitmap.Config.RGB_565);
+        for (int i = 0; i < x.getHeight(); ++i) {
+            for (int j = 0; j < x.getWidth(); ++j) {
+                int xValue = Color.red(x.getPixel(j, i));
+                int yValue = Color.red(y.getPixel(j, i));
+                double zValue = Math.sqrt(Math.pow((double)xValue, 2)
+                        + Math.pow((double)yValue, 2));
+                int zColor = Color.rgb((int)zValue, (int)zValue, (int)zValue);
+                result.setPixel(j, i, zColor);
+            }
+        }
+        imageViewFiltered.setImageBitmap(result);
     }
 
     private void doFourierFilter() {
