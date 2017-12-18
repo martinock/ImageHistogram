@@ -13,6 +13,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -58,10 +59,12 @@ public class MainActivity extends AppCompatActivity
     private ImageView imageViewGrayContrast;
     private ImageView imageViewGraySmooth;
     private ImageView imageViewFiltered;
+    private ImageView fourierImageView;
     private Button identifyButton;
     private Button filterButton;
     private RadioGroup filterGroup;
     private LinearLayout llFilter;
+    private LinearLayout llPersonNames;
 
     private BitmapDrawable originalImageBitmapDrawable;
     private Bitmap grayScaleBitmap;
@@ -97,10 +100,12 @@ public class MainActivity extends AppCompatActivity
         imageViewGrayContrast = (ImageView) findViewById(R.id.iv_photo_gray_processed);
         imageViewGraySmooth = (ImageView) findViewById(R.id.iv_photo_gray_smoothed);
         imageViewFiltered = (ImageView) findViewById(R.id.iv_photo_filtered);
+        fourierImageView = (ImageView) findViewById(R.id.iv_fourier);
         tvTitle = (TextView) findViewById(R.id.first_title);
         identifyButton = (Button) findViewById(R.id.btn_identify);
         tvResultName = (TextView) findViewById(R.id.tv_person_name);
         llFilter = (LinearLayout) findViewById(R.id.ll_filter);
+        llPersonNames = (LinearLayout) findViewById(R.id.ll_person_names);
         filterButton = (Button) findViewById(R.id.btn_filter);
         filterGroup = (RadioGroup) findViewById(R.id.filter_group);
         setButtonListener();
@@ -221,8 +226,8 @@ public class MainActivity extends AppCompatActivity
         // find center position of kernel (half of kernel size)
         int kCenterX = filter[0].length / 2;
         int kCenterY = filter.length / 2;
-        int rows = originalImageBitmapDrawable.getBitmap().getHeight();
-        int cols = originalImageBitmapDrawable.getBitmap().getWidth();
+        int rows = smoothedGrayScaleBitmap.getHeight();
+        int cols = smoothedGrayScaleBitmap.getWidth();
         Bitmap result = Bitmap.createBitmap(cols, rows, Bitmap.Config.RGB_565);
         int out[][] = new int[rows][cols];
 
@@ -295,7 +300,42 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void doFourierFilter() {
-
+        int height = smoothedGrayScaleBitmap.getHeight();
+        int width = smoothedGrayScaleBitmap.getWidth();
+        Bitmap result = Bitmap.createBitmap(width,
+                height, Bitmap.Config.RGB_565);
+        double realOut[][] = new double[width][height];
+        double imagOut[][] = new double[width][height];
+        double amplitudeOut[][] = new double[width][height];
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                for (int k = 0; k < height; ++k) {
+                    for (int l = 0; l < width; ++l) {
+                        realOut[j][i] += (smoothedGrayScaleBitmap.getPixel(l, k)
+                                * Math.cos(2
+                                        * Math.PI
+                                        * ((1.0 * j * l / width) + (1.0
+                                        * i * k / height))))
+                                / Math.sqrt(width * height);
+                        imagOut[j][i] -= (smoothedGrayScaleBitmap.getPixel(l, k)
+                                * Math.sin(2
+                                        * Math.PI
+                                        * ((1.0 * j * l / width) + (1.0
+                                        * i * k / height))))
+                                / Math.sqrt(width * height);
+                        amplitudeOut[j][i] = Math
+                                .sqrt(realOut[j][i]
+                                        * realOut[j][i]
+                                        + imagOut[j][i]
+                                        * imagOut[j][i]);
+                        result.setPixel(j, i, Color.rgb((int)amplitudeOut[j][i],
+                                (int)amplitudeOut[j][i],
+                                (int)amplitudeOut[j][i]));
+                    }
+                }
+            }
+        }
+        fourierImageView.setImageBitmap(result);
     }
 
     private void searchFaces() {
@@ -313,9 +353,19 @@ public class MainActivity extends AppCompatActivity
             }
         }
         drawRect(copyBitmap);
+        identifyFace();
         llFilter.setVisibility(View.VISIBLE);
         imageView.setImageBitmap(copyBitmap);
         isGroupImage = false;
+    }
+
+    private void identifyFace() {
+        for (FaceBound fb : faceBoundList) {
+            countObject(fb.minX, fb.maxX, fb.minY, fb.maxY);
+            fb.addCode(objectCodes);
+            searchFace(objectCodes);
+            objectCodes.clear();
+        }
     }
 
     private boolean isSkinColor(int pixel) {
@@ -476,12 +526,12 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void searchFace() {
+    private void searchFace(ArrayList<ChainCode> codes) {
         int leftX = originalImageBitmapDrawable.getBitmap().getWidth(),
                 rightX = 0;
         int topY = originalImageBitmapDrawable.getBitmap().getHeight(),
                 bottomY = 0;
-        for (ChainCode c : objectCodes) {
+        for (ChainCode c : codes) {
             if (c.getCentroidX() < leftX
                     && leftX > 0.1 * originalImageBitmapDrawable.getBitmap()
                     .getWidth()) {
@@ -530,60 +580,61 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void determineName(int idxMinError) {
+        TextView tv = new TextView(this);
+        tv.setGravity(Gravity.CENTER);
         switch (idxMinError) {
             case 0:
-                tvResultName.setText("This is Nino");
+                tv.setText("This is Nino");
                 break;
             case 1:
-                tvResultName.setText("This is Kamal");
+                tv.setText("This is Kamal");
                 break;
             case 2:
-                tvResultName.setText("This is Bimo");
+                tv.setText("This is Bimo");
                 break;
             case 3:
-                tvResultName.setText("This is Fari");
+                tv.setText("This is Fari");
                 break;
             case 4:
-                tvResultName.setText("This is Diaz");
+                tv.setText("This is Diaz");
                 break;
             case 5:
-                tvResultName.setText("This is Dhika");
+                tv.setText("This is Dhika");
                 break;
             case 6:
-                tvResultName.setText("This is Rudi");
+                tv.setText("This is Rudi");
                 break;
             case 7:
-                tvResultName.setText("This is Febi");
+                tv.setText("This is Febi");
                 break;
             case 8:
-                tvResultName.setText("This is Nugroho");
+                tv.setText("This is Nugroho");
                 break;
             case 9:
-                tvResultName.setText("This is Majid");
+                tv.setText("This is Majid");
                 break;
             case 10:
-                tvResultName.setText("This is Nathan");
+                tv.setText("This is Nathan");
                 break;
             case 11:
-                tvResultName.setText("This is Umay");
+                tv.setText("This is Umay");
                 break;
             default:
-                tvResultName.setText("Sorry I don't know this face");
+                tv.setText("Sorry I don't know this face");
         }
+        llPersonNames.addView(tv);
     }
 
-    private void countObject() {
+    private void countObject(int minX, int maxX, int minY, int maxY) {
         objectCount = 0;
-        int height = blackAndWhiteBitmap.getHeight();
-        int width = blackAndWhiteBitmap.getWidth();
         final Bitmap copyOfBW = blackAndWhiteBitmap.copy(
                 Bitmap.Config.RGB_565, true);
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
+        for (int i = minY; i < maxY; ++i) {
+            for (int j = minX; j < maxX; ++j) {
                 int pixel = blackAndWhiteBitmap.getPixel(j, i);
                 if (pixel == BLACK_COLOR) {
                     ChainCode codeObject = new ChainCode(j, i);
-                    traceBoundary(j, i, codeObject, width, height);
+                    traceBoundary(j, i, codeObject, minX, maxX, minY, maxY);
                     objectCodes.add(codeObject);
                 }
             }
@@ -653,7 +704,7 @@ public class MainActivity extends AppCompatActivity
         float maxVariance = 0;
         bwThreshold = 0;
 
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 64; i++) {
             //Make sure the first sum of element is not zero
             weightBackground = weightBackground + grayHistogram[i];
             if (weightBackground == 0) {
@@ -784,11 +835,9 @@ public class MainActivity extends AppCompatActivity
      * @param x starting point
      * @param y starting point
      * @param object chaincode object to store the direction list
-     * @param width image width
-     * @param height image height
      */
     private void traceBoundary(int x, int y, ChainCode object,
-                               int width, int height) {
+                               int minX, int maxX, int minY, int maxY) {
         int dir = 7;
         int currentX = x;
         int currentY = y;
@@ -806,7 +855,7 @@ public class MainActivity extends AppCompatActivity
             int neighbourY = currentY;
             switch (dir) {
                 case 0:
-                    if (currentX != width - 1) {
+                    if (currentX != maxX - 1) {
                         neighbourX = currentX + 1;
                         neighbourY = currentY;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -814,7 +863,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 1:
-                    if (currentX != width - 1 && currentY != 0) {
+                    if (currentX != maxX - 1 && currentY != minY) {
                         neighbourX = currentX + 1;
                         neighbourY = currentY - 1;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -822,7 +871,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 2:
-                    if (currentY != 0) {
+                    if (currentY != minY) {
                         neighbourX = currentX;
                         neighbourY = currentY - 1;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -830,7 +879,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 3:
-                    if (currentX != 0 && currentY != 0) {
+                    if (currentX != minX && currentY != minY) {
                         neighbourX = currentX - 1;
                         neighbourY = currentY - 1;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -838,7 +887,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 4:
-                    if (currentX != 0) {
+                    if (currentX != minX) {
                         neighbourX = currentX - 1;
                         neighbourY = currentY;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -846,7 +895,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 5:
-                    if (currentX != 0 && currentY != height-1) {
+                    if (currentX != minX && currentY != maxY-1) {
                         neighbourX = currentX - 1;
                         neighbourY = currentY + 1;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -854,7 +903,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 6:
-                    if (currentY != height-1) {
+                    if (currentY != maxY-1) {
                         neighbourX = currentX;
                         neighbourY = currentY + 1;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
@@ -862,7 +911,7 @@ public class MainActivity extends AppCompatActivity
                     }
                     break;
                 case 7:
-                    if (currentX != width - 1 && currentY != height-1) {
+                    if (currentX != maxX - 1 && currentY != maxY-1) {
                         neighbourX = currentX + 1;
                         neighbourY = currentY + 1;
                         neighbourPixel = blackAndWhiteBitmap.getPixel(
